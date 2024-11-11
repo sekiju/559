@@ -6,7 +6,7 @@ type (
 		FindManga(mangaID string) (*Manga, error)
 		FindChapters(mangaID string) ([]*Chapter, error)
 		FindChapter(chapterID string) (*Chapter, error)
-		Extract(chapter *Chapter) ([]*Page, error)
+		ExtractPages(chapter *Chapter) ([]*Page, error)
 	}
 
 	Manga struct {

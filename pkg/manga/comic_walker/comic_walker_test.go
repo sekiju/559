@@ -7,7 +7,7 @@ import (
 )
 
 func TestProvider(t *testing.T) {
-	provider := NewProvider()
+	provider := New()
 
 	t.Run("ExtractMangaID", func(t *testing.T) {
 		mangaWithChapterID, err := provider.ExtractMangaID("https://comic-walker.com/detail/KC_005558_S/episodes/KC_0055580000200011_E?episodeType=first")
@@ -38,7 +38,7 @@ func TestProvider(t *testing.T) {
 		assert.Equal(t, "018f84b1-1d0b-7557-b1e2-7ec22323c494", chapter.ID)
 
 		t.Run("ExtractEpisode", func(t *testing.T) {
-			pages, err := provider.Extract(chapter)
+			pages, err := provider.ExtractPages(chapter)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, pages)
 			util.AssertImage(t, "https://stg.yandere.ovh/test_providers/comic_walker__KC_005558_S%24KC_0055580000200011_E.webp", pages[0])

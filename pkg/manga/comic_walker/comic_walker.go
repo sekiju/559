@@ -15,7 +15,7 @@ type Provider struct{}
 
 const ProviderID = "comic_walker"
 
-func NewProvider() manga.Provider {
+func New() manga.Provider {
 	return &Provider{}
 }
 
@@ -24,7 +24,7 @@ var urlRegex = regexp.MustCompile("https://comic-walker.com/detail/(KC_[a-zA-Z0-
 func (p *Provider) ExtractMangaID(URL string) (string, error) {
 	matches := urlRegex.FindStringSubmatch(URL)
 	if len(matches) < 2 {
-		return "", fmt.Errorf("invalid URL format")
+		return "", manga.ErrInvalidURLFormat
 	}
 
 	if len(matches) == 4 {
@@ -136,7 +136,7 @@ func (p *Provider) FindChapter(chapterID string) (*manga.Chapter, error) {
 	}, nil
 }
 
-func (p *Provider) Extract(chapter *manga.Chapter) ([]*manga.Page, error) {
+func (p *Provider) ExtractPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	res, err := rq.New().Getf("https://comic-walker.com/api/contents/viewer?episodeId=%s&imageSizeType=width%%3A1284", chapter.ID)
 	if err != nil {
 		return nil, err
