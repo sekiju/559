@@ -1,1 +1,5 @@
 .idea/
+downloads/
+temporary/
+*.hcl
+!example.config.hcl
