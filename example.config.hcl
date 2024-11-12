@@ -1,6 +1,6 @@
 output {
   dir = "temporary"
-  format = "auto" # auto | jpeg | png | avif
+  format = "auto" # auto | jpeg | png | avif | webp
 }
 
 site "comic-walker.com" {}

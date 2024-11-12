@@ -4,6 +4,7 @@ import (
 	bt "bytes"
 	"fmt"
 	"github.com/gen2brain/avif"
+	"github.com/gen2brain/webp"
 	"github.com/sekiju/mary/internal/config"
 	"github.com/sekiju/mary/pkg/sdk/extractor/manga"
 	"github.com/sekiju/rq"
@@ -72,9 +73,11 @@ func WithEncode(dir string, format config.OutputFormat, page *manga.Page) error 
 		fileExt = "png"
 	case config.AvifOutputFormat:
 		fileExt = "avif"
+	case config.WebpOutputFormat:
+		fileExt = "webp"
 	}
 
-	file, err := os.Create(filepath.Join(dir, page.Filename[:len(filepath.Ext(page.Filename))-1]+fileExt))
+	file, err := os.Create(filepath.Join(dir, page.Filename[:1+len(page.Filename)-len(filepath.Ext(page.Filename))]+fileExt))
 	if err != nil {
 		return fmt.Errorf("failed to create file: %s", err)
 	}
@@ -90,6 +93,10 @@ func WithEncode(dir string, format config.OutputFormat, page *manga.Page) error 
 		}
 	case config.AvifOutputFormat:
 		if err = avif.Encode(file, img); err != nil {
+			return err
+		}
+	case config.WebpOutputFormat:
+		if err = webp.Encode(file, img); err != nil {
 			return err
 		}
 	}

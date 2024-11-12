@@ -27,4 +27,5 @@ const (
 	PngOutputFormat  OutputFormat = "png"
 	JpegOutputFormat OutputFormat = "jpeg"
 	AvifOutputFormat OutputFormat = "avif"
+	WebpOutputFormat OutputFormat = "webp"
 )
