@@ -22,7 +22,7 @@ func main() {
 
 func downloadChapter(ext manga.Provider, outputDir, chapterURL string) error {
 	mangaID, err := ext.ExtractMangaID(chapterURL)
-	if err != nil && !errors.Is(err, manga.ErrURLeqID) {
+	if err != nil && !errors.Is(err, manga.ErrURLIsID) {
 		return err
 	}
 

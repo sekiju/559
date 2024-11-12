@@ -12,10 +12,10 @@ func TestProvider(t *testing.T) {
 
 	t.Run("ExtractMangaID", func(t *testing.T) {
 		_, err := provider.ExtractMangaID("https://shonenjumpplus.com/episode/17106371892806261346")
-		assert.Equal(t, manga.ErrURLeqID, err)
+		assert.Equal(t, manga.ErrURLIsID, err)
 
 		_, err = provider.ExtractMangaID("https://shonenjumpplus.com/magazine/4856001361589090626")
-		assert.Equal(t, manga.ErrURLeqID, err)
+		assert.Equal(t, manga.ErrURLIsID, err)
 	})
 
 	t.Run("FindManga", func(t *testing.T) {

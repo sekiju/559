@@ -33,7 +33,7 @@ func (p *Provider) ExtractMangaID(URL string) (string, error) {
 		return "", manga.ErrInvalidURLFormat
 	}
 
-	return URL, manga.ErrURLeqID
+	return URL, manga.ErrURLIsID
 }
 
 func (p *Provider) FindManga(URL string) (*manga.Manga, error) {
@@ -42,12 +42,16 @@ func (p *Provider) FindManga(URL string) (*manga.Manga, error) {
 		return nil, err
 	}
 
+	if res.StatusCode == 404 {
+		return nil, manga.ErrMangaNotFound
+	}
+
 	html, err := res.Text()
 	if err != nil {
 		return nil, err
 	}
 
-	episodeResult, err := util.ExtractFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+	episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +97,7 @@ func (p *Provider) FindChapters(URL string) ([]*manga.Chapter, error) {
 			return nil, err
 		}
 
-		episodeResult, err := util.ExtractFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+		episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 		if err != nil {
 			return nil, err
 		}
@@ -134,12 +138,16 @@ func (p *Provider) FindChapter(URL string) (*manga.Chapter, error) {
 		return nil, err
 	}
 
+	if res.StatusCode == 404 {
+		return nil, manga.ErrChapterNotFound
+	}
+
 	html, err := res.Text()
 	if err != nil {
 		return nil, err
 	}
 
-	episodeResult, err := util.ExtractFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+	episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 	if err != nil {
 		return nil, err
 	}
@@ -166,12 +174,16 @@ func (p *Provider) ExtractPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 		return nil, err
 	}
 
+	if res.StatusCode == 404 {
+		return nil, manga.ErrChapterNotFound
+	}
+
 	html, err := res.Text()
 	if err != nil {
 		return nil, err
 	}
 
-	episodeResult, err := util.ExtractFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+	episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 	if err != nil {
 		return nil, err
 	}

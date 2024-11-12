@@ -41,6 +41,10 @@ func (p *Provider) FindManga(mangaID string) (*manga.Manga, error) {
 		return nil, err
 	}
 
+	if res.StatusCode == 404 {
+		return nil, manga.ErrMangaNotFound
+	}
+
 	var workResult WorkResult
 	if err = res.JSON(&workResult); err != nil {
 		return nil, err
@@ -62,6 +66,10 @@ func (p *Provider) FindChapters(mangaID string) ([]*manga.Chapter, error) {
 	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/episode?workCode=%s&episodeType=first", IDs[0])
 	if err != nil {
 		return nil, err
+	}
+
+	if res.StatusCode == 404 {
+		return nil, manga.ErrMangaNotFound
 	}
 
 	var episodeResult EpisodeResult
@@ -120,6 +128,10 @@ func (p *Provider) FindChapter(chapterID string) (*manga.Chapter, error) {
 		return nil, err
 	}
 
+	if res.StatusCode == 404 {
+		return nil, manga.ErrChapterNotFound
+	}
+
 	var episodeResult EpisodeResult
 	if err = res.JSON(&episodeResult); err != nil {
 		return nil, err
@@ -140,6 +152,10 @@ func (p *Provider) ExtractPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	res, err := rq.New().Getf("https://comic-walker.com/api/contents/viewer?episodeId=%s&imageSizeType=width%%3A1284", chapter.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.StatusCode == 404 {
+		return nil, manga.ErrChapterNotFound
 	}
 
 	var viewerResult ViewerResult

@@ -37,6 +37,4 @@ type (
 		DescrambleFn *DescrambleFn
 		Headers      map[string]string `json:"headers"`
 	}
-
-	Error string
 )
