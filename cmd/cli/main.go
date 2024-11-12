@@ -20,7 +20,7 @@ func main() {
 	}
 }
 
-func downloadChapter(ext manga.Provider, outputDir, chapterURL string) error {
+func downloadChapter(ext manga.Provider, cfg *config.Config, chapterURL string) error {
 	mangaID, err := ext.ExtractMangaID(chapterURL)
 	if err != nil && !errors.Is(err, manga.ErrURLIsID) {
 		return err
@@ -36,15 +36,25 @@ func downloadChapter(ext manga.Provider, outputDir, chapterURL string) error {
 		return err
 	}
 
-	if err = os.MkdirAll(outputDir, 0755); err != nil {
+	if err = os.MkdirAll(cfg.Output.Dir, 0755); err != nil {
 		return err
 	}
 
-	log.Info().Msgf("Output directory: %s", outputDir)
+	log.Info().Msgf("Output directory: %s", cfg.Output.Dir)
 	log.Info().Msgf("Total pages: %d", len(pages))
 
+	var downloadFn = func(page *manga.Page) error {
+		return download.Bytes(cfg.Output.Dir, page)
+	}
+
+	if cfg.Output.Format != "auto" {
+		downloadFn = func(page *manga.Page) error {
+			return download.WithEncode(cfg.Output.Dir, cfg.Output.Format, page)
+		}
+	}
+
 	for _, page := range pages {
-		if err = download.Bytes(outputDir, page); err != nil {
+		if err = downloadFn(page); err != nil {
 			return err
 		}
 	}
@@ -73,7 +83,7 @@ func run() error {
 		return err
 	}
 
-	if err = downloadChapter(ext, cfg.OutputDir, args.DownloadChapter); err != nil {
+	if err = downloadChapter(ext, cfg, args.DownloadChapter); err != nil {
 		return err
 	}
 

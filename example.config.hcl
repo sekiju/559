@@ -1,4 +1,7 @@
-output_dir = "temporary"
+output {
+  dir = "temporary"
+  format = "auto" # auto | jpeg | png | avif
+}
 
 site "comic-walker.com" {}
 

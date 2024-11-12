@@ -14,7 +14,10 @@ func New(path string) (*Config, error) {
 		StrictMerge: true,
 	})
 
-	c := Config{OutputDir: "downloads"}
+	c := Config{Output: output{
+		Dir:    "downloads",
+		Format: AutoOutputFormat,
+	}}
 
 	if err := k.Load(file.Provider(path), hcl.Parser(true)); err != nil {
 		return nil, err
