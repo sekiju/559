@@ -1,13 +1,19 @@
 package manga
 
 type (
+	ID interface{}
+
 	Provider interface {
-		ExtractMangaID(URL string) (string, error)
-		FindManga(mangaID string) (*Manga, error)
-		FindChapters(mangaID string) ([]*Chapter, error)
-		FindChapter(chapterID string) (*Chapter, error)
+		ExtractMangaID(URL string) (ExtractedURL, error)
+		FindManga(ID ID) (*Manga, error)
+		FindChapters(ID ID) ([]*Chapter, error)
+		FindChapter(ID ID) (*Chapter, error)
 		ExtractPages(chapter *Chapter) ([]*Page, error)
 	}
+
+	Error string
+
+	ExtractedURL map[string]any
 
 	Manga struct {
 		Provider string  `json:"provider"`

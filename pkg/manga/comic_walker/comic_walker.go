@@ -8,7 +8,6 @@ import (
 	"github.com/sekiju/rq"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 type Provider struct{}
@@ -19,24 +18,30 @@ func New() manga.Provider {
 	return &Provider{}
 }
 
-var urlRegex = regexp.MustCompile("https://comic-walker.com/detail/(KC_[a-zA-Z0-9_]*)(/episodes/(KC_[a-zA-Z0-9_]*))?")
+var re = regexp.MustCompile("https://comic-walker.com/detail/(KC_[a-zA-Z0-9_]*)(/episodes/(KC_[a-zA-Z0-9_]*))?")
 
-func (p *Provider) ExtractMangaID(URL string) (string, error) {
-	matches := urlRegex.FindStringSubmatch(URL)
+func (p *Provider) ExtractMangaID(URL string) (manga.ExtractedURL, error) {
+	matches := re.FindStringSubmatch(URL)
 	if len(matches) < 2 {
-		return "", manga.ErrInvalidURLFormat
+		return nil, manga.ErrInvalidURLFormat
 	}
+
+	res := manga.ExtractedURL{"manga": matches[1]}
 
 	if len(matches) == 4 {
-		matches = append(matches[:2], matches[3:]...)
+		res["chapter"] = matches[3]
 	}
 
-	return strings.Join(matches[1:], "$"), nil
+	return res, nil
 }
 
-func (p *Provider) FindManga(mangaID string) (*manga.Manga, error) {
-	IDs := strings.Split(mangaID, "$")
-	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/work?workCode=%s", IDs[0])
+func (p *Provider) FindManga(ID manga.ID) (*manga.Manga, error) {
+	extractedURL, err := extractURL(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/work?workCode=%s", extractedURL.MustMangaID())
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +66,15 @@ func (p *Provider) FindManga(mangaID string) (*manga.Manga, error) {
 
 type searchFn func(episodeID string) ([]*manga.Chapter, error)
 
-func (p *Provider) FindChapters(mangaID string) ([]*manga.Chapter, error) {
-	IDs := strings.Split(mangaID, "$")
-	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/episode?workCode=%s&episodeType=first", IDs[0])
+func (p *Provider) FindChapters(ID manga.ID) ([]*manga.Chapter, error) {
+	extractedURL, err := extractURL(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	workCode := extractedURL.MustMangaID().(string)
+
+	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/episode?workCode=%s&episodeType=first", workCode)
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +95,8 @@ func (p *Provider) FindChapters(mangaID string) ([]*manga.Chapter, error) {
 			Number:   strconv.Itoa(episodeResult.Episode.Internal.EpisodeNo),
 			Title:    episodeResult.Episode.Title,
 			Index:    episodeResult.Episode.Internal.EpisodeNo - 1,
-			URL:      fmt.Sprintf("https://comic-walker.com/detail/%s/episodes/%s", mangaID, episodeResult.Episode.Code),
-			MangaID:  mangaID,
+			URL:      fmt.Sprintf("https://comic-walker.com/detail/%s/episodes/%s", workCode, episodeResult.Episode.Code),
+			MangaID:  workCode,
 		},
 	}
 
@@ -108,8 +119,8 @@ func (p *Provider) FindChapters(mangaID string) ([]*manga.Chapter, error) {
 				Number:   strconv.Itoa(viewerJumpForwardResult.Episode.Internal.EpisodeNo),
 				Title:    viewerJumpForwardResult.Episode.Title,
 				Index:    viewerJumpForwardResult.Episode.Internal.EpisodeNo - 1,
-				URL:      fmt.Sprintf("https://comic-walker.com/detail/%s/episodes/%s", mangaID, viewerJumpForwardResult.Episode.Code),
-				MangaID:  mangaID,
+				URL:      fmt.Sprintf("https://comic-walker.com/detail/%s/episodes/%s", workCode, viewerJumpForwardResult.Episode.Code),
+				MangaID:  workCode,
 			})
 
 			return fn(viewerJumpForwardResult.Episode.Id)
@@ -121,9 +132,19 @@ func (p *Provider) FindChapters(mangaID string) ([]*manga.Chapter, error) {
 	return fn(episodeResult.Episode.Id)
 }
 
-func (p *Provider) FindChapter(chapterID string) (*manga.Chapter, error) {
-	IDs := strings.Split(chapterID, "$")
-	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/episode?workCode=%s&episodeCode=%s&episodeType=first", IDs[0], IDs[1])
+func (p *Provider) FindChapter(ID manga.ID) (*manga.Chapter, error) {
+	extractedURL, err := extractURL(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	workCode := extractedURL.MustMangaID().(string)
+	episodeCode, err := extractedURL.ChapterID()
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := rq.New().Getf("https://comic-walker.com/api/contents/details/episode?workCode=%s&episodeCode=%s&episodeType=first", workCode, episodeCode)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +164,8 @@ func (p *Provider) FindChapter(chapterID string) (*manga.Chapter, error) {
 		Number:   strconv.Itoa(episodeResult.Episode.Internal.EpisodeNo),
 		Title:    episodeResult.Episode.Title,
 		Index:    episodeResult.Episode.Internal.EpisodeNo - 1,
-		URL:      fmt.Sprintf("https://comic-walker.com/detail/%s/episodes/%s", IDs[0], episodeResult.Episode.Code),
-		MangaID:  IDs[0],
+		URL:      fmt.Sprintf("https://comic-walker.com/detail/%s/episodes/%s", workCode, episodeResult.Episode.Code),
+		MangaID:  workCode,
 	}, nil
 }
 
@@ -193,4 +214,13 @@ func (p *Provider) ExtractPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	}
 
 	return pages, nil
+}
+
+func extractURL(ID manga.ID) (manga.ExtractedURL, error) {
+	switch v := ID.(type) {
+	case manga.ExtractedURL:
+		return v, nil
+	default:
+		return nil, manga.ErrStringAsIDUnsupported
+	}
 }

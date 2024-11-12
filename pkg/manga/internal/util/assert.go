@@ -38,3 +38,19 @@ func AssertImage(t *testing.T, decodedImageURL string, page *manga.Page) {
 
 	assert.Equal(t, 0, bytes.Compare(pageBytes, decodedBytes))
 }
+
+func AssertMangaID(t *testing.T, extractedURL manga.ExtractedURL, mangaID any) {
+	extractedMangaID, err := extractedURL.MangaID()
+	assert.NoError(t, err)
+	assert.Equal(t, mangaID, extractedMangaID)
+}
+
+func AssertMangaAndChapterID(t *testing.T, extractedURL manga.ExtractedURL, mangaID, chapterID any) {
+	extractedMangaID, err := extractedURL.MangaID()
+	assert.NoError(t, err)
+	assert.Equal(t, mangaID, extractedMangaID)
+
+	extractedChapterID, err := extractedURL.ChapterID()
+	assert.NoError(t, err)
+	assert.Equal(t, chapterID, extractedChapterID)
+}

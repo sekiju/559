@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -22,7 +21,7 @@ func main() {
 
 func downloadChapter(ext manga.Provider, cfg *config.Config, chapterURL string) error {
 	mangaID, err := ext.ExtractMangaID(chapterURL)
-	if err != nil && !errors.Is(err, manga.ErrURLIsID) {
+	if err != nil {
 		return err
 	}
 

@@ -2,7 +2,6 @@ package giga_viewer
 
 import (
 	"github.com/sekiju/mary/pkg/manga/internal/util"
-	"github.com/sekiju/mary/pkg/sdk/extractor/manga"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,11 +10,11 @@ func TestProvider(t *testing.T) {
 	provider := New("shonenjumpplus.com")
 
 	t.Run("ExtractMangaID", func(t *testing.T) {
-		_, err := provider.ExtractMangaID("https://shonenjumpplus.com/episode/17106371892806261346")
-		assert.Equal(t, manga.ErrURLIsID, err)
-
-		_, err = provider.ExtractMangaID("https://shonenjumpplus.com/magazine/4856001361589090626")
-		assert.Equal(t, manga.ErrURLIsID, err)
+		res, err := provider.ExtractMangaID("https://shonenjumpplus.com/episode/17106371892806261346")
+		assert.NoError(t, err)
+		URL, err := res.URL()
+		assert.NoError(t, err)
+		assert.Equal(t, "https://shonenjumpplus.com/episode/17106371892806261346", URL)
 	})
 
 	t.Run("FindManga", func(t *testing.T) {
@@ -25,10 +24,9 @@ func TestProvider(t *testing.T) {
 	})
 
 	t.Run("FindChapters", func(t *testing.T) {
-		episodes, err := provider.FindChapters("https://shonenjumpplus.com/episode/17106371892806261346")
+		episodes, err := provider.FindChapters("https://shonenjumpplus.com/episode/3269754496608909464")
 		assert.NoError(t, err)
-		assert.NotEmpty(t, episodes)
-		assert.Equal(t, "17106371892806261346", episodes[0].ID)
+		assert.Len(t, episodes, 3)
 	})
 
 	t.Run("FindChapter", func(t *testing.T) {

@@ -15,28 +15,23 @@ type Provider struct {
 	sessionID *string
 }
 
-const ProviderID = "giga_viewer"
+var re = regexp.MustCompile(`(magazine|episode)/(\d+)`)
 
-func New(hostname string) manga.Provider {
-	return &Provider{hostname: hostname}
-}
-
-func NewWithSession(hostname, sessionID string) manga.Provider {
-	return &Provider{hostname: hostname, sessionID: &sessionID}
-}
-
-var getEpisodeRegex = regexp.MustCompile(`(magazine|episode)/(\d+)`)
-
-func (p *Provider) ExtractMangaID(URL string) (string, error) {
-	matches := getEpisodeRegex.FindStringSubmatch(URL)
+func (p *Provider) ExtractMangaID(URL string) (manga.ExtractedURL, error) {
+	matches := re.FindStringSubmatch(URL)
 	if len(matches) != 3 {
-		return "", manga.ErrInvalidURLFormat
+		return nil, manga.ErrInvalidURLFormat
 	}
 
-	return URL, manga.ErrURLIsID
+	return manga.ExtractedURL{"url": URL}, nil
 }
 
-func (p *Provider) FindManga(URL string) (*manga.Manga, error) {
+func (p *Provider) FindManga(mangaID manga.ID) (*manga.Manga, error) {
+	URL, err := extractURL(mangaID)
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := rq.New().Get(URL)
 	if err != nil {
 		return nil, err
@@ -75,7 +70,12 @@ func (p *Provider) FindManga(URL string) (*manga.Manga, error) {
 
 type searchFn func(URL string) ([]*manga.Chapter, error)
 
-func (p *Provider) FindChapters(URL string) ([]*manga.Chapter, error) {
+func (p *Provider) FindChapters(mangaID manga.ID) ([]*manga.Chapter, error) {
+	URL, err := extractURL(mangaID)
+	if err != nil {
+		return nil, err
+	}
+
 	chapters := make([]*manga.Chapter, 0)
 	visitedIDs := make(map[string]bool)
 
@@ -87,7 +87,7 @@ func (p *Provider) FindChapters(URL string) ([]*manga.Chapter, error) {
 
 		visitedIDs[episodeURL] = true
 
-		res, err := rq.New().Get(URL)
+		res, err := rq.New().Get(episodeURL)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +132,12 @@ func (p *Provider) FindChapters(URL string) ([]*manga.Chapter, error) {
 	return fn(URL)
 }
 
-func (p *Provider) FindChapter(URL string) (*manga.Chapter, error) {
+func (p *Provider) FindChapter(chapterID manga.ID) (*manga.Chapter, error) {
+	URL, err := extractURL(chapterID)
+	if err != nil {
+		return nil, err
+	}
+
 	res, err := rq.New().Get(URL)
 	if err != nil {
 		return nil, err
@@ -215,4 +220,39 @@ func (p *Provider) ExtractPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	}
 
 	return chapterPages, nil
+}
+
+func extractURL(ID manga.ID) (string, error) {
+	var URL string
+
+	switch v := ID.(type) {
+	case manga.ExtractedURL:
+		anyURL, err := v.URL()
+		if err != nil {
+			return "", err
+		}
+
+		strURL, ok := anyURL.(string)
+		if !ok {
+			return "", manga.ErrInvalidID
+		}
+
+		URL = strURL
+	case string:
+		URL = v
+	default:
+		return "", manga.ErrInvalidID
+	}
+
+	return URL, nil
+}
+
+const ProviderID = "giga_viewer"
+
+func New(hostname string) manga.Provider {
+	return &Provider{hostname: hostname}
+}
+
+func NewWithSession(hostname, sessionID string) manga.Provider {
+	return &Provider{hostname: hostname, sessionID: &sessionID}
 }
