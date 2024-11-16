@@ -39,18 +39,57 @@ func AssertImage(t *testing.T, decodedImageURL string, page *manga.Page) {
 	assert.Equal(t, 0, bytes.Compare(pageBytes, decodedBytes))
 }
 
-func AssertMangaID(t *testing.T, extractedURL manga.ExtractedURL, mangaID any) {
-	extractedMangaID, err := extractedURL.MangaID()
-	assert.NoError(t, err)
-	assert.Equal(t, mangaID, extractedMangaID)
+type TestExtractedURL struct {
+	extractedURL manga.ExtractedURL
+	mangaID      *string
+	chapterID    *string
+	url          *string
 }
 
-func AssertMangaAndChapterID(t *testing.T, extractedURL manga.ExtractedURL, mangaID, chapterID any) {
-	extractedMangaID, err := extractedURL.MangaID()
-	assert.NoError(t, err)
-	assert.Equal(t, mangaID, extractedMangaID)
+type Opt func(*TestExtractedURL)
 
-	extractedChapterID, err := extractedURL.ChapterID()
-	assert.NoError(t, err)
-	assert.Equal(t, chapterID, extractedChapterID)
+func NewTestExtractedURL(extractedURL manga.ExtractedURL, opts ...Opt) *TestExtractedURL {
+	config := TestExtractedURL{extractedURL: extractedURL}
+	for _, fn := range opts {
+		fn(&config)
+	}
+	return &config
+}
+
+func ValidateMangaID(mangaID string) Opt {
+	return func(c *TestExtractedURL) {
+		c.mangaID = &mangaID
+	}
+}
+
+func ValidateChapterID(chapterID string) Opt {
+	return func(c *TestExtractedURL) {
+		c.chapterID = &chapterID
+	}
+}
+
+func ValidateURL(URL string) Opt {
+	return func(c *TestExtractedURL) {
+		c.url = &URL
+	}
+}
+
+func (u *TestExtractedURL) Assert(t *testing.T) {
+	if v := u.mangaID; v != nil {
+		mangaID, err := u.extractedURL.MangaID()
+		assert.NoError(t, err)
+		assert.Equal(t, *v, mangaID)
+	}
+
+	if v := u.chapterID; v != nil {
+		chapterID, err := u.extractedURL.ChapterID()
+		assert.NoError(t, err)
+		assert.Equal(t, *v, chapterID)
+	}
+
+	if v := u.url; v != nil {
+		url, err := u.extractedURL.URL()
+		assert.NoError(t, err)
+		assert.Equal(t, *v, url)
+	}
 }
