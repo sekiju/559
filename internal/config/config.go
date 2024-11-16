@@ -20,11 +20,11 @@ func New(path string) (*Config, error) {
 	}}
 
 	if err := k.Load(file.Provider(path), hcl.Parser(true)); err != nil {
-		return nil, err
+		return &c, err
 	}
 
 	if err := k.Unmarshal("", &c); err != nil {
-		return nil, err
+		return &c, err
 	}
 
 	return &c, nil

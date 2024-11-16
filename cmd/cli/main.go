@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -69,7 +70,11 @@ func run() error {
 
 	cfg, err := config.New(args.ConfigPath)
 	if err != nil {
-		return err
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+
+		log.Info().Msg("No configuration file found, using defaults.")
 	}
 
 	chapterURL, err := url.Parse(args.DownloadChapter)
