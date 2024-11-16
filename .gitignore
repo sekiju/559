@@ -1,5 +1,7 @@
 .idea/
 downloads/
+dist/
 temporary/
 *.hcl
 !example.config.hcl
+whats-new.md
