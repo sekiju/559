@@ -10,11 +10,12 @@ func TestProvider(t *testing.T) {
 	provider := New("shonenjumpplus.com")
 
 	t.Run("ExtractMangaID", func(t *testing.T) {
-		res, err := provider.ExtractMangaID("https://shonenjumpplus.com/episode/17106371892806261346")
+		extractedURL, err := provider.ExtractMangaID("https://shonenjumpplus.com/episode/17106371892806261346")
 		assert.NoError(t, err)
-		URL, err := res.URL()
-		assert.NoError(t, err)
-		assert.Equal(t, "https://shonenjumpplus.com/episode/17106371892806261346", URL)
+		util.NewTestExtractedURL(
+			extractedURL,
+			util.ValidateURL("https://shonenjumpplus.com/episode/17106371892806261346"),
+		).Assert(t)
 	})
 
 	t.Run("FindManga", func(t *testing.T) {

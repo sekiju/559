@@ -36,11 +36,15 @@ func (e ExtractedURL) ChapterID() (any, error) {
 	return result, nil
 }
 
-func (e ExtractedURL) URL() (any, error) {
+func (e ExtractedURL) MustURL() string {
+	return e["url"].(string)
+}
+
+func (e ExtractedURL) URL() (string, error) {
 	result, ok := e["url"]
 	if !ok {
 		return "", ErrInvalidID
 	}
 
-	return result, nil
+	return result.(string), nil
 }

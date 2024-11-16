@@ -227,14 +227,9 @@ func extractURL(ID manga.ID) (string, error) {
 
 	switch v := ID.(type) {
 	case manga.ExtractedURL:
-		anyURL, err := v.URL()
+		strURL, err := v.URL()
 		if err != nil {
 			return "", err
-		}
-
-		strURL, ok := anyURL.(string)
-		if !ok {
-			return "", manga.ErrInvalidID
 		}
 
 		URL = strURL

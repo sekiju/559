@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"flag"
 	"github.com/knadh/koanf/parsers/hcl"
 	"github.com/knadh/koanf/providers/file"
@@ -20,11 +19,11 @@ func New(path string) (*Config, error) {
 	}}
 
 	if err := k.Load(file.Provider(path), hcl.Parser(true)); err != nil {
-		return nil, err
+		return &c, err
 	}
 
 	if err := k.Unmarshal("", &c); err != nil {
-		return nil, err
+		return &c, err
 	}
 
 	return &c, nil
@@ -37,10 +36,6 @@ func ParseArguments() (*Arguments, error) {
 	flag.StringVar(&args.Session, "session", "", "Session token for the current service")
 	flag.StringVar(&args.ConfigPath, "config", "config.hcl", "Path to the config file (default: config.yaml)")
 	flag.Parse()
-
-	if args.DownloadChapter == "" {
-		return nil, errors.New("no chapter URL provided. Use --download-chapter flag")
-	}
 
 	return &args, nil
 }

@@ -11,20 +11,19 @@ func TestProvider(t *testing.T) {
 	provider := New()
 
 	t.Run("ExtractMangaID", func(t *testing.T) {
-		res, err := provider.ExtractMangaID("https://comic-walker.com/detail/KC_005558_S/episodes/KC_0055580000200011_E?episodeType=first")
+		extractedURL, err := provider.ExtractMangaID("https://comic-walker.com/detail/KC_005558_S/episodes/KC_0055580000200011_E?episodeType=first")
 		assert.NoError(t, err)
-		mangaID, err := res.MangaID()
-		assert.NoError(t, err)
-		assert.Equal(t, "KC_005558_S", mangaID)
-		chapterID, err := res.ChapterID()
-		assert.NoError(t, err)
-		assert.Equal(t, "KC_0055580000200011_E", chapterID)
+		util.NewTestExtractedURL(
+			extractedURL,
+			util.ValidateMangaID("KC_005558_S"),
+			util.ValidateChapterID("KC_0055580000200011_E"),
+		).Assert(t)
 
-		res, err = provider.ExtractMangaID("https://comic-walker.com/detail/KC_005558_S?episodeType=first")
 		assert.NoError(t, err)
-		mangaID, err = res.MangaID()
-		assert.NoError(t, err)
-		assert.Equal(t, "KC_005558_S", mangaID)
+		util.NewTestExtractedURL(
+			extractedURL,
+			util.ValidateMangaID("KC_005558_S"),
+		).Assert(t)
 	})
 
 	t.Run("FindManga", func(t *testing.T) {
