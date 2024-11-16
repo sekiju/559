@@ -22,6 +22,10 @@ func Bytes(dir string, page *manga.Page) error {
 	}
 
 	bytes, err := res.Bytes()
+	if err != nil {
+		return err
+	}
+
 	if page.DescrambleFn != nil {
 		bytes, err = (*page.DescrambleFn)(bytes)
 		if err != nil {
@@ -53,6 +57,10 @@ func WithEncode(dir string, format config.OutputFormat, page *manga.Page) error 
 	}
 
 	bytes, err := res.Bytes()
+	if err != nil {
+		return err
+	}
+
 	if page.DescrambleFn != nil {
 		bytes, err = (*page.DescrambleFn)(bytes)
 		if err != nil {
