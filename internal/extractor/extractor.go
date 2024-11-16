@@ -19,9 +19,17 @@ var providerRegistry = map[string]ProviderFactory{
 	"pocket.shonenmagazine.com": createGigaViewerProvider("pocket.shonenmagazine.com"),
 	"comic-gardo.com":           createGigaViewerProvider("comic-gardo.com"),
 	"magcomi.com":               createGigaViewerProvider("magcomi.com"),
-	"tonarinoyj.jp": func(session *string) manga.Provider {
-		return giga_viewer.New("tonarinoyj.jp")
-	},
+	"tonarinoyj.jp":             createGigaViewerProviderWithoutSession("tonarinoyj.jp"),
+	"comic-ogyaaa.com":          createGigaViewerProviderWithoutSession("comic-ogyaaa.com"),
+	"comic-action.com":          createGigaViewerProvider("comic-action.com"),
+	"comic-days.com":            createGigaViewerProvider("comic-days.com"),
+	"comic-growl.com":           createGigaViewerProviderWithoutSession("comic-growl.com"),
+	"comic-earthstar.com":       createGigaViewerProviderWithoutSession("comic-earthstar.com"),
+	"comicborder.com":           createGigaViewerProviderWithoutSession("comicborder.com"),
+	"comic-trail.com":           createGigaViewerProviderWithoutSession("comic-trail.com"),
+	"kuragebunch.com":           createGigaViewerProvider("kuragebunch.com"),
+	"viewer.heros-web.com":      createGigaViewerProvider("viewer.heros-web.com"),
+	"www.sunday-webry.com":      createGigaViewerProviderWithoutSession("www.sunday-webry.com"),
 }
 
 func createGigaViewerProvider(hostname string) ProviderFactory {
@@ -29,6 +37,12 @@ func createGigaViewerProvider(hostname string) ProviderFactory {
 		if session != nil {
 			return giga_viewer.NewWithSession(hostname, *session)
 		}
+		return giga_viewer.New(hostname)
+	}
+}
+
+func createGigaViewerProviderWithoutSession(hostname string) ProviderFactory {
+	return func(session *string) manga.Provider {
 		return giga_viewer.New(hostname)
 	}
 }
