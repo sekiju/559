@@ -31,7 +31,7 @@ func ExtractJSONFromHTML[T any](html, prefix, suffix string) (*T, error) {
 	}
 
 	var result T
-	if err := json.Unmarshal([]byte(escapedJSON), &result); err != nil {
+	if err = json.Unmarshal([]byte(escapedJSON), &result); err != nil {
 		return nil, err
 	}
 

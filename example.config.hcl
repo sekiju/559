@@ -13,8 +13,6 @@ download {
 }
 
 site {
-  "comic-walker.com" {}
-
   "shonenjumpplus.com" {
     cookie_string = ""
   }
@@ -35,10 +33,6 @@ site {
     cookie_string = ""
   }
 
-  "tonarinoyj.jp" {}
-
-  "comic-ogyaaa.com" {}
-
   "comic-action.com" {
     cookie_string = ""
   }
@@ -46,14 +40,6 @@ site {
   "comic-days.com" {
     cookie_string = ""
   }
-
-  "comic-growl.com" {}
-
-  "comic-earthstar.com" {}
-
-  "comicborder.com" {}
-
-  "comic-trail.com" {}
 
   "kuragebunch.com" {
     cookie_string = ""
@@ -63,9 +49,11 @@ site {
     cookie_string = ""
   }
 
-  "www.sunday-webry.com" {}
-
   "www.cmoa.jp" {
+    cookie_string = ""
+  }
+
+  "www.corocoro.jp" {
     cookie_string = ""
   }
 }

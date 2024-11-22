@@ -19,6 +19,16 @@ Date: YYYY-MM-DD
 
 -->
 
+## v1.1.0
+
+Date: YYYY-MM-DD
+
+### What's Changed
+
+#### Supported Websites
+
+- [www.corocoro.jp](https://www.corocoro.jp/)
+
 ## v1.0.1
 
 Date: YYYY-MM-DD

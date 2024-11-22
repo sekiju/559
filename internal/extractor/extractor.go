@@ -5,6 +5,7 @@ import (
 	"github.com/sekiju/mdl/internal/config"
 	"github.com/sekiju/mdl/internal/manga/cmoa"
 	"github.com/sekiju/mdl/internal/manga/comic_walker"
+	"github.com/sekiju/mdl/internal/manga/corocoro"
 	"github.com/sekiju/mdl/internal/manga/giga_viewer"
 	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
 )
@@ -36,6 +37,9 @@ var registry = map[string]Factory{
 			return cmoa.New(*session)
 		}
 		return nil
+	},
+	"www.corocoro.jp": func(session *string) manga.Extractor {
+		return corocoro.New()
 	},
 }
 
