@@ -57,7 +57,7 @@ func gigaViewerNoCookies(hostname string) Factory {
 func NewExtractor(cfg *config.Config, hostname string) (manga.Extractor, error) {
 	factory, exists := registry[hostname]
 	if !exists {
-		return nil, fmt.Errorf("unsupported provider for hostname: %s", hostname)
+		return nil, fmt.Errorf("unsupported website: %s", hostname)
 	}
 
 	session := getSession(cfg, hostname)
