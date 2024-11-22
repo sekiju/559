@@ -19,9 +19,17 @@ Date: YYYY-MM-DD
 
 -->
 
-## v1.0.0-beta1
+## v1.0.1
 
 Date: YYYY-MM-DD
+
+### Patch Changes
+
+- Fix the `unsupported provider for hostname:` error when the user launches the app from Explorer ([#5ba31cc](https://github.com/sekiju/mdl/commit/5ba31cc023d1abb9f92adfacb8319d2310ae2760)).
+
+## v1.0.0
+
+Date: 2024-11-22
 
 ### What's Changed
 
