@@ -55,7 +55,7 @@ func getChapterURLsFromUser() []string {
 		fmt.Print("Please enter the chapter URL: ")
 		reader := bufio.NewReader(os.Stdin)
 		input, _ := reader.ReadString('\n')
-		return strings.Split(strings.TrimSpace(input), "")
+		return strings.Split(strings.TrimSpace(input), " ")
 	}
 
 	return args
