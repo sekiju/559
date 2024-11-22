@@ -1,9 +1,9 @@
 package main
 
-// Credit: https://github.com/5rahim/seanime (based on)
-
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,31 +18,30 @@ const (
 var versionRegex = regexp.MustCompile(`(?m)^## v\d+(\.\d+)*([a-zA-Z0-9-]+)?`)
 
 func main() {
+	if err := run(); err != nil {
+		panic(err)
+	}
+}
+
+func run() error {
+	version := flag.String("version", "latest", "The version to search for in the changelog (e.g., v1.2.3 or latest)")
+	flag.Parse()
+
 	inFilePath := filepath.Join(".", inFile)
-	changelogContent, err := os.ReadFile(inFilePath)
+	content, err := os.ReadFile(inFilePath)
 	if err != nil {
-		fmt.Printf("Error reading input file: %v\n", err)
-		return
+		return fmt.Errorf("error reading input file: %v", err)
 	}
 
-	versionSections := versionRegex.Split(string(changelogContent), -1)
-
-	var validSections []string
-	for _, section := range versionSections {
-		if !strings.Contains(section, "<!--") && !strings.Contains(section, "-->") {
-			validSections = append(validSections, section)
-		}
+	section, err := findVersionSection(string(content), *version)
+	if err != nil {
+		log.Fatalf("Error finding version section: %v", err)
 	}
 
-	if len(validSections) == 0 {
-		fmt.Println("No valid version sections found in changelog")
-		return
-	}
-
-	lines := strings.Split(validSections[0], "\n")
+	lines := strings.Split(section, "\n")
 	var filteredLines []string
 	for _, line := range lines {
-		if strings.HasPrefix(line, "## v") {
+		if strings.HasPrefix(line, "## v") || strings.HasPrefix(line, "Date:") {
 			continue
 		}
 
@@ -55,9 +54,43 @@ func main() {
 	outFilePath := filepath.Join(".", outFile)
 
 	if err = os.WriteFile(outFilePath, []byte(currentChangelog), 0644); err != nil {
-		fmt.Printf("Error writing to output file: %v\n", err)
-		return
+		return fmt.Errorf("error writing to output file: %v", err)
 	}
 
 	fmt.Printf("Changelog successfully written to %s\n", outFilePath)
+
+	return nil
+}
+
+func findVersionSection(content, version string) (string, error) {
+	versionMatches := versionRegex.FindAllStringIndex(content, -1)
+	if len(versionMatches) < 2 {
+		return "", fmt.Errorf("insufficient version headers found")
+	}
+
+	versionMatches = versionMatches[1:]
+
+	if version == "latest" {
+		if len(versionMatches) > 1 {
+			return content[versionMatches[0][0]:versionMatches[1][0]], nil
+		} else {
+			return content[versionMatches[0][0]:], nil
+		}
+	}
+
+	for i := 0; i < len(versionMatches); i++ {
+		versionHeader := content[versionMatches[i][0]:versionMatches[i][1]]
+
+		if strings.HasPrefix(versionHeader, "## "+version) {
+			nextStart := len(content)
+
+			if i+1 < len(versionMatches) {
+				nextStart = versionMatches[i+1][0]
+			}
+
+			return content[versionMatches[i][0]:nextStart], nil
+		}
+	}
+
+	return "", fmt.Errorf("version %s not found", version)
 }

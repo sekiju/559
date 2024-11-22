@@ -19,6 +19,20 @@ jobs:
       - name: Fetch all tags
         run: git fetch --force --tags
 
+      - name: Determine version from tag name 🔎
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          VERSION=${GITHUB_REF/refs\/tags\/v/}
+          echo "Version extracted from tag: $VERSION"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF/refs\/tags\//}
+          echo "Version extracted from tag: $VERSION"
+          else
+          echo "Warning: No tag associated with this run. Defaulting to version 1.0.0."
+          VERSION="1.0.0"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -29,7 +43,7 @@ jobs:
           go build -o generate-release-notes ./.github/scripts/generate-release-notes.go
 
       - name: Generate Release Notes
-        run: ./generate-release-notes
+        run: ./generate-release-notes --version ${{ env.GITHUB_TOKEN }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
