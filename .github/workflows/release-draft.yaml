@@ -1,0 +1,41 @@
+name: Release Draft
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fetch all tags
+        run: git fetch --force --tags
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23
+
+      - name: Build Go scripts
+        run: |
+          go build -o generate-release-notes ./.github/scripts/generate-release-notes.go
+
+      - name: Generate Release Notes
+        run: ./generate-release-notes
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean --release-notes whats-new.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
