@@ -31,7 +31,8 @@ func New() (*Config, error) {
 			Format:   AutoOutputFormat,
 		},
 		Download: download{
-			ConcurrentProcesses: 4,
+			PreloadNextChapters: 2,
+			PageBatchSize:       4,
 		},
 	}
 

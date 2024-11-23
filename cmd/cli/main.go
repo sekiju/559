@@ -11,15 +11,12 @@ import (
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/extractor"
 	"github.com/sekiju/mdl/internal/config"
-	"github.com/sekiju/mdl/internal/download"
+	"github.com/sekiju/mdl/internal/downloader"
 	"github.com/sekiju/mdl/internal/util"
 	"github.com/sekiju/mdl/sdk/manga"
-	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -58,8 +55,6 @@ func getChapterURLs() []string {
 	return strings.Split(strings.TrimSpace(input), " ")
 }
 
-type DownloadFunc func(page *manga.Page) error
-
 func run() error {
 	cfg, err := config.New()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -70,68 +65,35 @@ func run() error {
 		return err
 	}
 
-	for _, chapterURL := range getChapterURLs() {
-		parsedURL, err := url.Parse(chapterURL)
-		if err != nil {
-			return fmt.Errorf("invalid chapter URL: %v", err)
+	var downloadFunc downloader.DownloadPageFunc
+	if cfg.Output.Format == "auto" {
+		downloadFunc = func(dir string, page *manga.Page) error {
+			return downloader.Bytes(dir, page)
 		}
-
-		ext, err := extractor.NewExtractor(cfg, parsedURL.Hostname())
-		if err != nil {
-			return err
+	} else {
+		downloadFunc = func(dir string, page *manga.Page) error {
+			return downloader.WithEncode(dir, cfg.Output.Format, page)
 		}
-
-		chapter, err := ext.FindChapter(chapterURL)
-		if err != nil {
-			return err
-		}
-
-		log.Info().Msg("Extracting pages...")
-
-		pages, err := ext.FindChapterPages(chapter)
-		if err != nil {
-			return err
-		}
-
-		if len(pages) == 0 {
-			return errors.New("no pages found to download")
-		}
-
-		outputDir := filepath.Join(cfg.Output.Dir, chapter.ID)
-
-		if cfg.Output.CleanDir {
-			if stat, err := os.Stat(outputDir); err == nil && stat.IsDir() {
-				if err = os.RemoveAll(outputDir); err != nil {
-					return err
-				}
-			}
-		}
-
-		if err = os.MkdirAll(outputDir, os.ModePerm); err != nil {
-			return err
-		}
-
-		log.Info().Msgf("Output: %s | Pages: %d", outputDir, len(pages))
-
-		start := time.Now()
-
-		var downloadFn DownloadFunc
-		if cfg.Output.Format == "auto" {
-			downloadFn = func(page *manga.Page) error {
-				return download.Bytes(outputDir, page)
-			}
-		} else {
-			downloadFn = func(page *manga.Page) error {
-				return download.WithEncode(outputDir, cfg.Output.Format, page)
-			}
-		}
-
-		if err = downloadPages(pages, cfg.Download.ConcurrentProcesses, downloadFn); err != nil {
-			return fmt.Errorf("downloading pages: %w", err)
-		}
-
-		log.Info().Msgf("Download completed in %s", time.Since(start))
 	}
+
+	loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
+		MaxPageBatchSize:          cfg.Download.PageBatchSize,
+		MaximumPrefetchedChapters: cfg.Download.PreloadNextChapters,
+		DownloadDir:               cfg.Output.Dir,
+		DownloadPage:              downloadFunc,
+		CleanDestination:          cfg.Output.CleanDir,
+		NewExtractor: func(hostname string) (manga.Extractor, error) {
+			return extractor.NewExtractor(cfg, hostname)
+		},
+	})
+
+	chapterURLs := getChapterURLs()
+
+	for _, chapterURL := range chapterURLs {
+		loader.Queue(chapterURL)
+	}
+
+	loader.GracefulStop()
 
 	return nil
 }
@@ -164,34 +126,7 @@ func checkForUpdates() error {
 
 	sort.Sort(semver.Collection(versions))
 
-	log.Info().Msgf("New version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
+	log.Info().Msgf("NewDownloader version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
 
-	return nil
-}
-
-func downloadPages(pages []*manga.Page, workers int, download DownloadFunc) error {
-	ch := make(chan *manga.Page, len(pages))
-	var wg sync.WaitGroup
-
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for page := range ch {
-				if err := download(page); err != nil {
-					log.Error().Err(err).Msgf("failed to download #%d page", page.Index)
-				}
-			}
-		}()
-	}
-
-	go func() {
-		for _, page := range pages {
-			ch <- page
-		}
-		close(ch)
-	}()
-
-	wg.Wait()
 	return nil
 }

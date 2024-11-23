@@ -25,7 +25,8 @@ type output struct {
 }
 
 type download struct {
-	ConcurrentProcesses int `koanf:"concurrent_processes"`
+	PreloadNextChapters int `koanf:"preload_next_chapters"`
+	PageBatchSize       int `koanf:"page_batch_size"`
 }
 
 type site struct {

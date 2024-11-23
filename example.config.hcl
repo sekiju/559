@@ -9,7 +9,8 @@ output {
 }
 
 download {
-  concurrent_processes = 4
+  preload_next_chapters = 2
+  page_batch_size = 4
 }
 
 site {
