@@ -81,7 +81,7 @@ func findVersionSection(content, version string) (string, error) {
 	for i := 0; i < len(versionMatches); i++ {
 		versionHeader := content[versionMatches[i][0]:versionMatches[i][1]]
 
-		if strings.HasPrefix(versionHeader, "## "+version) {
+		if strings.HasPrefix(versionHeader, "## v"+version) {
 			nextStart := len(content)
 
 			if i+1 < len(versionMatches) {

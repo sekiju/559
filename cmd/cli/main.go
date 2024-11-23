@@ -45,40 +45,32 @@ func main() {
 
 func waitForInput() {
 	fmt.Println("\nPress Enter to exit...")
-	reader := bufio.NewReader(os.Stdin)
-	_, _ = reader.ReadBytes('\n')
+	_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
 
-func getChapterURLsFromUser() []string {
-	args := flag.Args()
-	if len(args) == 0 {
-		fmt.Print("Please enter the chapter URL: ")
-		reader := bufio.NewReader(os.Stdin)
-		input, _ := reader.ReadString('\n')
-		return strings.Split(strings.TrimSpace(input), " ")
+func getChapterURLs() []string {
+	if args := flag.Args(); len(args) > 0 {
+		return args
 	}
 
-	return args
+	fmt.Print("Please enter the chapter URL: ")
+	input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	return strings.Split(strings.TrimSpace(input), " ")
 }
+
+type DownloadFunc func(page *manga.Page) error
 
 func run() error {
 	cfg, err := config.New()
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		log.Info().Msg("No configuration file found, using defaults")
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
 	}
 
-	if cfg.Application.CheckForUpdates {
-		if err = isOutdatedVersion(); err != nil {
-			return err
-		}
+	if cfg.Application.CheckForUpdates && checkForUpdates() != nil {
+		return err
 	}
 
-	chapterURLs := getChapterURLsFromUser()
-
-	for _, chapterURL := range chapterURLs {
+	for _, chapterURL := range getChapterURLs() {
 		parsedURL, err := url.Parse(chapterURL)
 		if err != nil {
 			return fmt.Errorf("invalid chapter URL: %v", err)
@@ -115,16 +107,15 @@ func run() error {
 			}
 		}
 
-		if err = os.MkdirAll(outputDir, 0755); err != nil {
+		if err = os.MkdirAll(outputDir, os.ModePerm); err != nil {
 			return err
 		}
 
-		log.Info().Msgf("Output directory: %s", outputDir)
-		log.Info().Msgf("Total pages: %d", len(pages))
+		log.Info().Msgf("Output: %s | Pages: %d", outputDir, len(pages))
 
 		start := time.Now()
 
-		var downloadFn func(page *manga.Page) error
+		var downloadFn DownloadFunc
 		if cfg.Output.Format == "auto" {
 			downloadFn = func(page *manga.Page) error {
 				return download.Bytes(outputDir, page)
@@ -145,29 +136,24 @@ func run() error {
 	return nil
 }
 
-func isOutdatedVersion() error {
-	log.Trace().Msgf("Current version: %s", version)
+func checkForUpdates() error {
+	log.Trace().Msgf("Current version: %s | Checking for updates...", version)
 
 	res, err := htt.New().Get("https://api.github.com/repos/sekiju/mdl/tags")
 	if err != nil {
 		return err
 	}
 
-	var tagsResult []map[string]interface{}
-	if err = res.JSON(&tagsResult); err != nil {
+	var tags []map[string]interface{}
+	if err = res.JSON(&tags); err != nil {
 		return err
 	}
 
 	currentVersion := semver.MustParse(version)
 
 	var versions []*semver.Version
-	for _, tag := range tagsResult {
-		v, err := semver.NewVersion(tag["name"].(string))
-		if err != nil {
-			return err
-		}
-
-		if v.GreaterThan(currentVersion) {
+	for _, tag := range tags {
+		if v, err := semver.NewVersion(tag["name"].(string)); err == nil && v.GreaterThan(currentVersion) {
 			versions = append(versions, v)
 		}
 	}
@@ -178,14 +164,12 @@ func isOutdatedVersion() error {
 
 	sort.Sort(semver.Collection(versions))
 
-	latestVersion := versions[len(versions)-1]
-
-	log.Info().Msgf("New version available: %s - download release from: https://github.com/sekiju/mdl/releases", latestVersion.String())
+	log.Info().Msgf("New version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
 
 	return nil
 }
 
-func downloadPages(pages []*manga.Page, workers int, downloadFn func(page *manga.Page) error) error {
+func downloadPages(pages []*manga.Page, workers int, download DownloadFunc) error {
 	ch := make(chan *manga.Page, len(pages))
 	var wg sync.WaitGroup
 
@@ -194,8 +178,8 @@ func downloadPages(pages []*manga.Page, workers int, downloadFn func(page *manga
 		go func() {
 			defer wg.Done()
 			for page := range ch {
-				if err := downloadFn(page); err != nil {
-					log.Error().Err(err).Msgf("downloading page %d", page.Index)
+				if err := download(page); err != nil {
+					log.Error().Err(err).Msgf("failed to download #%d page", page.Index)
 				}
 			}
 		}()
@@ -209,6 +193,5 @@ func downloadPages(pages []*manga.Page, workers int, downloadFn func(page *manga
 	}()
 
 	wg.Wait()
-
 	return nil
 }
