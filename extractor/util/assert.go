@@ -3,7 +3,7 @@ package util
 import (
 	"bytes"
 	"github.com/sekiju/htt"
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
+	"github.com/sekiju/mdl/sdk/manga"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

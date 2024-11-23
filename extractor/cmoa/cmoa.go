@@ -2,8 +2,8 @@ package cmoa
 
 import (
 	"github.com/sekiju/htt"
-	"github.com/sekiju/mdl/internal/manga/speed_binb"
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
+	"github.com/sekiju/mdl/extractor/speed_binb"
+	"github.com/sekiju/mdl/sdk/manga"
 	"regexp"
 )
 

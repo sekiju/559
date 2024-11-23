@@ -1,8 +1,8 @@
 package comic_walker
 
 import (
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
-	"github.com/sekiju/mdl/internal/util"
+	"github.com/sekiju/mdl/extractor/util"
+	"github.com/sekiju/mdl/sdk/manga"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

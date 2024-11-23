@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/internal/renamer"
-	manga "github.com/sekiju/mdl/internal/sdk/extractor/manga"
+	"github.com/sekiju/mdl/sdk/manga"
 	"regexp"
 	"strconv"
 )

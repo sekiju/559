@@ -8,8 +8,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/internal/renamer"
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
 	"github.com/sekiju/mdl/internal/util"
+	"github.com/sekiju/mdl/sdk/manga"
 	"regexp"
 	"strings"
 )
@@ -128,6 +128,6 @@ func New() manga.Extractor {
 	return new(Extractor)
 }
 
-func NewWithCookieString(cookieString string) manga.Extractor {
+func NewAuthorized(cookieString string) manga.Extractor {
 	return &Extractor{cookieString: &cookieString}
 }

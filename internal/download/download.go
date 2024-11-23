@@ -7,7 +7,7 @@ import (
 	"github.com/gen2brain/webp"
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/internal/config"
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
+	"github.com/sekiju/mdl/sdk/manga"
 	"image"
 	"image/jpeg"
 	"image/png"

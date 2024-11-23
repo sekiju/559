@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/internal/renamer"
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
+	"github.com/sekiju/mdl/sdk/manga"
 	"image"
 	"image/draw"
 	_ "image/jpeg"
