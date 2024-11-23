@@ -1,8 +1,8 @@
 package downloader
 
 import (
-	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/sekiju/mdl/internal/config"
 	"github.com/sekiju/mdl/sdk/manga"
 	"net/url"
 	"os"
@@ -11,35 +11,19 @@ import (
 	"time"
 )
 
-type (
-	DownloadPageFunc func(dir string, page *manga.Page) error
+func (d *Downloader) Queue(URL string) {
+	qi := &QueueInfo{URL: URL}
 
-	NewExtractorFunc func(hostname string) (manga.Extractor, error)
+	log.Debug().Msgf("New queue item with URL: %s", URL)
 
-	Downloader struct {
-		ch               chan *QueueInfo
-		wg               sync.WaitGroup
-		cleanDestination bool
-		downloadDir      string
-		batchSize        int
-		downloadPage     DownloadPageFunc
-		newExtractor     NewExtractorFunc
-	}
+	d.wg.Add(1)
+	d.ch <- qi
+}
 
-	NewDownloaderOptions struct {
-		BatchSize        int
-		Directory        string
-		CleanDestination bool
-		DownloadPage     DownloadPageFunc
-		NewExtractor     NewExtractorFunc
-	}
-
-	QueueInfo struct {
-		URL       string
-		ChapterID string
-		Pages     []*manga.Page
-	}
-)
+func (d *Downloader) Stop() {
+	close(d.ch)
+	d.wg.Wait()
+}
 
 func (d *Downloader) downloadImages(qi *QueueInfo) error {
 	destination := filepath.Join(d.downloadDir, qi.ChapterID)
@@ -57,8 +41,6 @@ func (d *Downloader) downloadImages(qi *QueueInfo) error {
 
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, d.batchSize)
-	errorCount := 0
-	var errorMu sync.Mutex
 
 	for _, page := range qi.Pages {
 		semaphore <- struct{}{}
@@ -71,9 +53,6 @@ func (d *Downloader) downloadImages(qi *QueueInfo) error {
 
 			if err := d.downloadPage(destination, page); err != nil {
 				log.Error().Err(err).Msgf("Failed to download page #%d", page.Index)
-				errorMu.Lock()
-				errorCount++
-				errorMu.Unlock()
 				return
 			}
 		}(page)
@@ -81,24 +60,7 @@ func (d *Downloader) downloadImages(qi *QueueInfo) error {
 
 	wg.Wait()
 
-	if errorCount > 0 {
-		return fmt.Errorf("failed to download %d pages", errorCount)
-	}
-
 	return nil
-}
-
-func (d *Downloader) Queue(URL string) {
-	qi := &QueueInfo{URL: URL}
-
-	log.Debug().Msgf("New queue item for URL: %s", URL)
-
-	d.wg.Add(1)
-	d.ch <- qi
-}
-
-func (d *Downloader) GracefulStop() {
-	d.wg.Wait()
 }
 
 func (d *Downloader) run() {
@@ -143,7 +105,7 @@ func (d *Downloader) run() {
 
 			queueInfo.Pages = pages
 
-			if err := d.downloadImages(queueInfo); err != nil {
+			if err = d.downloadImages(queueInfo); err != nil {
 				log.Error().Str("chapterId", queueInfo.ChapterID).Err(err).Msg("Failed to download chapter")
 				return
 			}
@@ -155,9 +117,30 @@ func (d *Downloader) run() {
 }
 
 func NewDownloader(opts *NewDownloaderOptions) *Downloader {
+	var downloadFunc DownloadPageFunc
+	if opts.OutputFileFormat == config.AutoOutputFormat {
+		downloadFunc = func(dir string, page *manga.Page) error {
+			r, err := getReader(page)
+			if err != nil {
+				return err
+			}
+
+			return saveFile(dir, page.Filename, r)
+		}
+	} else {
+		downloadFunc = func(dir string, page *manga.Page) error {
+			r, err := getReader(page)
+			if err != nil {
+				return err
+			}
+
+			return saveEncodedImage(dir, page.Filename, opts.OutputFileFormat, r)
+		}
+	}
+
 	d := &Downloader{
 		ch:               make(chan *QueueInfo),
-		downloadPage:     opts.DownloadPage,
+		downloadPage:     downloadFunc,
 		newExtractor:     opts.NewExtractor,
 		batchSize:        opts.BatchSize,
 		cleanDestination: opts.CleanDestination,

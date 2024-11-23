@@ -65,22 +65,11 @@ func run() error {
 		return err
 	}
 
-	var downloadFunc downloader.DownloadPageFunc
-	if cfg.Output.FileFormat == "auto" {
-		downloadFunc = func(dir string, page *manga.Page) error {
-			return downloader.Bytes(dir, page)
-		}
-	} else {
-		downloadFunc = func(dir string, page *manga.Page) error {
-			return downloader.WithEncode(dir, cfg.Output.FileFormat, page)
-		}
-	}
-
 	loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
 		BatchSize:        cfg.Application.MaxParallelDownloads,
 		Directory:        cfg.Output.Directory,
-		DownloadPage:     downloadFunc,
 		CleanDestination: cfg.Output.CleanOnStart,
+		OutputFileFormat: cfg.Output.FileFormat,
 		NewExtractor: func(hostname string) (manga.Extractor, error) {
 			return extractor.NewExtractor(cfg, hostname)
 		},
@@ -92,7 +81,7 @@ func run() error {
 		loader.Queue(chapterURL)
 	}
 
-	loader.GracefulStop()
+	loader.Stop()
 
 	return nil
 }
@@ -125,7 +114,7 @@ func checkForUpdates() error {
 
 	sort.Sort(semver.Collection(versions))
 
-	log.Info().Msgf("NewDownloader version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
+	log.Info().Msgf("New downloader version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
 
 	return nil
 }
