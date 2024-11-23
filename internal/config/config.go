@@ -23,16 +23,13 @@ func New() (*Config, error) {
 	c := Config{
 		PrimaryCookie: ptr.String(args.Cookie),
 		Application: application{
-			CheckForUpdates: true,
+			CheckUpdates:         true,
+			MaxParallelDownloads: 4,
 		},
 		Output: output{
-			Dir:      "downloads",
-			CleanDir: false,
-			Format:   AutoOutputFormat,
-		},
-		Download: download{
-			PreloadNextChapters: 2,
-			PageBatchSize:       4,
+			Directory:    "downloads",
+			CleanOnStart: false,
+			FileFormat:   AutoOutputFormat,
 		},
 	}
 

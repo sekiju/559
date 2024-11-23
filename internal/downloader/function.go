@@ -62,7 +62,7 @@ func Bytes(dir string, page *manga.Page) error {
 	return nil
 }
 
-func WithEncode(dir string, format config.OutputFormat, page *manga.Page) error {
+func WithEncode(dir string, format config.OutputFileFormat, page *manga.Page) error {
 	r, err := pReader(page)
 	if err != nil {
 		return err

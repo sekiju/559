@@ -10,35 +10,30 @@ type Config struct {
 
 	Application application     `koanf:"application"`
 	Output      output          `koanf:"output"`
-	Download    download        `koanf:"download"`
 	Sites       map[string]site `koanf:"site"`
 }
 
 type application struct {
-	CheckForUpdates bool `koanf:"check_for_updates"`
+	CheckUpdates         bool `koanf:"check_updates"`
+	MaxParallelDownloads int  `koanf:"max_parallel_downloads"`
 }
 
 type output struct {
-	Dir      string       `koanf:"dir"`
-	CleanDir bool         `koanf:"clean_dir"`
-	Format   OutputFormat `koanf:"format"`
-}
-
-type download struct {
-	PreloadNextChapters int `koanf:"preload_next_chapters"`
-	PageBatchSize       int `koanf:"page_batch_size"`
+	Directory    string           `koanf:"directory"`
+	CleanOnStart bool             `koanf:"clean_on_start"`
+	FileFormat   OutputFileFormat `koanf:"file_format"`
 }
 
 type site struct {
 	CookieString *string `koanf:"cookie_string"`
 }
 
-type OutputFormat string
+type OutputFileFormat string
 
 const (
-	AutoOutputFormat OutputFormat = "auto"
-	PngOutputFormat  OutputFormat = "png"
-	JpegOutputFormat OutputFormat = "jpeg"
-	AvifOutputFormat OutputFormat = "avif"
-	WebpOutputFormat OutputFormat = "webp"
+	AutoOutputFormat OutputFileFormat = "auto"
+	PngOutputFormat  OutputFileFormat = "png"
+	JpegOutputFormat OutputFileFormat = "jpeg"
+	AvifOutputFormat OutputFileFormat = "avif"
+	WebpOutputFormat OutputFileFormat = "webp"
 )

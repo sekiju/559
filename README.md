@@ -64,7 +64,7 @@ CLI argument or modify config file:
 
 site {
   "shonenjumpplus.com" {
-    cookie_string = "glsc=1hYa4GrNp2DndSNIShVyoDGP6MgDmaJhiX22C0X734hkzod56wsBN7Fy1S5ZBOQd"
+    cookies = "glsc=1hYa4GrNp2DndSNIShVyoDGP6MgDmaJhiX22C0X734hkzod56wsBN7Fy1S5ZBOQd"
   }
 }
 ```

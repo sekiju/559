@@ -61,27 +61,26 @@ func run() error {
 		return err
 	}
 
-	if cfg.Application.CheckForUpdates && checkForUpdates() != nil {
+	if cfg.Application.CheckUpdates && checkForUpdates() != nil {
 		return err
 	}
 
 	var downloadFunc downloader.DownloadPageFunc
-	if cfg.Output.Format == "auto" {
+	if cfg.Output.FileFormat == "auto" {
 		downloadFunc = func(dir string, page *manga.Page) error {
 			return downloader.Bytes(dir, page)
 		}
 	} else {
 		downloadFunc = func(dir string, page *manga.Page) error {
-			return downloader.WithEncode(dir, cfg.Output.Format, page)
+			return downloader.WithEncode(dir, cfg.Output.FileFormat, page)
 		}
 	}
 
 	loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
-		MaxPageBatchSize:          cfg.Download.PageBatchSize,
-		MaximumPrefetchedChapters: cfg.Download.PreloadNextChapters,
-		DownloadDir:               cfg.Output.Dir,
-		DownloadPage:              downloadFunc,
-		CleanDestination:          cfg.Output.CleanDir,
+		BatchSize:        cfg.Application.MaxParallelDownloads,
+		Directory:        cfg.Output.Directory,
+		DownloadPage:     downloadFunc,
+		CleanDestination: cfg.Output.CleanOnStart,
 		NewExtractor: func(hostname string) (manga.Extractor, error) {
 			return extractor.NewExtractor(cfg, hostname)
 		},
