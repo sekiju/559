@@ -43,7 +43,7 @@ jobs:
           go build -o generate-release-notes ./.github/scripts/generate-release-notes.go
 
       - name: Generate Release Notes
-        run: ./generate-release-notes --version ${{ env.GITHUB_TOKEN }}
+        run: ./generate-release-notes --version ${{ env.VERSION }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
