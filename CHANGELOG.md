@@ -25,22 +25,18 @@ Date: YYYY-MM-DD
 
 ### What's Changed
 
-#### Downloader enhanced with chapter metadata preloader
+### Configuration Changes
 
-The downloader has been upgraded to include the ability to preload information about next chapters in queue. This enhancement
-significantly speeds up the application's performance when loading multiple chapters, especially noticeable when dealing with magazines.
+All variables have been renamed. For a detailed overview of the changes, please refer to the [example.config.hcl](https://github.com/sekiju/mdl/blob/c6bcfaf5ce28b6b73abebb6a6db97e25803f9f1e/example.config.hcl) file. Note that only the section names remain unchanged; all other variables have been updated.
 
-- The variable `download.concurrent_processes` has been renamed to `download.page_batch_size` ([#ccf3f5](https://github.com/sekiju/mdl/commit/ccf3f54c2f22956bd8e281593352528e5a66328f)).
-- A new variable `download.preload_next_chapters` has been introduced to control the number of chapters to be preloaded ([#ccf3f5](https://github.com/sekiju/mdl/commit/ccf3f54c2f22956bd8e281593352528e5a66328f)).
+- The `download` section has been removed.
+  - The variable `concurrent_downloads` has been renamed to `max_parallel_downloads` and moved to the `application` section.
 
-The updated `download` section  now looks as follows:
-
-```hcl
-download {
-  preload_next_chapters = 2
-  page_batch_size       = 4
-}
-```
+- `check_for_updates` has been renamed to `check_updates`.
+- `dir` has been renamed to `directory`.
+- `clean_dir` has been renamed to `clean_on_start`.
+- `format` has been renamed to `file_format`.
+- In the `site` section, `cookie_string` has been renamed to `cookies`.
 
 #### Support for new Websites
 
