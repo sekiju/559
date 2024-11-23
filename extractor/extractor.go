@@ -6,11 +6,12 @@ import (
 	"github.com/sekiju/mdl/extractor/comic_walker"
 	"github.com/sekiju/mdl/extractor/corocoro"
 	"github.com/sekiju/mdl/extractor/giga_viewer"
+	"github.com/sekiju/mdl/extractor/storia_takeshobo"
 	"github.com/sekiju/mdl/internal/config"
 	"github.com/sekiju/mdl/sdk/manga"
 )
 
-type Factory func(session *string) manga.Extractor
+type Factory func(cookieString *string) manga.Extractor
 
 var registry = map[string]Factory{
 	"comic-walker.com": func(session *string) manga.Extractor {
@@ -43,6 +44,9 @@ var registry = map[string]Factory{
 			return corocoro.NewAuthorized(*cookieString)
 		}
 		return corocoro.New()
+	},
+	"storia.takeshobo.co.jp": func(cookieString *string) manga.Extractor {
+		return storia_takeshobo.New()
 	},
 }
 

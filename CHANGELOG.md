@@ -28,10 +28,11 @@ Date: YYYY-MM-DD
 #### Supported Websites
 
 - [www.corocoro.jp](https://www.corocoro.jp/)
+- [storia.takeshobo.co.jp](https://storia.takeshobo.co.jp/)
 
 ## v1.0.1
 
-Date: YYYY-MM-DD
+Date: 2024-11-23
 
 ### Patch Changes
 

@@ -14,6 +14,7 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -47,7 +48,78 @@ func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 	case apiURLExists && strings.Contains(apiURL, "bibGetCntntInfo") && query.Has("u1"):
 		return e.v016452(parsedURL, apiURL)
 	default:
+		return e.v016061(parsedURL, content)
+	}
+}
+
+func (e *Extractor) v016061(parsedURL *url.URL, content *goquery.Selection) ([]*manga.Page, error) {
+	log.Trace().Msg("SpeedBinb version: v016061")
+
+	tPages := content.Find("div[data-ptimg$=\"ptimg.json\"]").Map(func(i int, s *goquery.Selection) string {
+		text, _ := s.Attr("data-ptimg")
+		return text
+	})
+
+	if len(tPages) > 0 {
+		pages := make([]*manga.Page, len(tPages))
+		indexNamer := renamer.New(len(tPages))
+
+		for i, src := range tPages {
+			res, err := htt.New().Get(parsedURL.String() + "/" + src)
+			if err != nil {
+				return nil, err
+			}
+
+			var ptImg Ptimg
+			if err = res.JSON(&ptImg); err != nil {
+				return nil, err
+			}
+
+			pages[i] = &manga.Page{
+				URL:      parsedURL.String() + "/data/" + ptImg.Resources.I.Src,
+				Filename: indexNamer.Name(i, ".png"),
+				Index:    uint(i),
+				Decode:   e.decode016061(ptImg.Views),
+			}
+		}
+
+		return pages, nil
+	} else {
 		return nil, manga.ErrMethodUnimplemented
+	}
+}
+
+var reDecode016061 = regexp.MustCompile("[:,+>]")
+
+func (e *Extractor) decode016061(views []PtimgView) manga.DecodeFunc {
+	return func(b []byte) ([]byte, error) {
+		img, _, err := image.Decode(bytes.NewReader(b))
+		if err != nil {
+			return nil, err
+		}
+
+		descrambledImg := image.NewRGBA(image.Rect(0, 0, views[0].Width, views[0].Height))
+
+		for _, part := range views[0].Coords {
+			num := reDecode016061.Split(part, -1)
+
+			sourceX, _ := strconv.Atoi(num[1])
+			sourceY, _ := strconv.Atoi(num[2])
+			partWidth, _ := strconv.Atoi(num[3])
+			partHeight, _ := strconv.Atoi(num[4])
+			targetX, _ := strconv.Atoi(num[5])
+			targetY, _ := strconv.Atoi(num[6])
+
+			dstRect, drawRect := image.Rect(targetX, targetY, targetX+partWidth, targetY+partHeight), image.Rect(sourceX, sourceY, sourceX+partWidth, sourceY+partHeight)
+			draw.Draw(descrambledImg, dstRect, img, drawRect.Min, draw.Src)
+		}
+
+		var buf bytes.Buffer
+		if err = png.Encode(&buf, descrambledImg); err != nil {
+			return nil, err
+		}
+
+		return buf.Bytes(), nil
 	}
 }
 
@@ -173,6 +245,13 @@ func (e *Extractor) decode016130(imgSrc string, ctbl, ptbl []string) manga.Decod
 	}
 }
 
-func New(req *htt.Request) *Extractor {
+func New(requests ...*htt.Request) *Extractor {
+	var req *htt.Request
+	if len(requests) > 0 {
+		req = requests[0]
+	} else {
+		req = htt.New()
+	}
+
 	return &Extractor{req}
 }
