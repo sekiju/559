@@ -11,46 +11,46 @@ output {
 
 site {
   "shonenjumpplus.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "comic-zenon.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "pocket.shonenmagazine.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "comic-gardo.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "magcomi.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "comic-action.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "comic-days.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "kuragebunch.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "viewer.heros-web.com" {
-    cookies = ""
+    cookie = ""
   }
 
   "www.cmoa.jp" {
-    cookies = ""
+    cookie = ""
   }
 
   "www.corocoro.jp" {
-    cookies = ""
+    cookie = ""
   }
 }

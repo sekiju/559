@@ -25,7 +25,7 @@ type output struct {
 }
 
 type site struct {
-	CookieString *string `koanf:"cookie_string"`
+	Cookie *string `koanf:"cookie"`
 }
 
 type OutputFileFormat string

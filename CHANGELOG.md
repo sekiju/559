@@ -36,7 +36,7 @@ All variables have been renamed. For a detailed overview of the changes, please 
 - `dir` has been renamed to `directory`.
 - `clean_dir` has been renamed to `clean_on_start`.
 - `format` has been renamed to `file_format`.
-- In the `site` section, `cookie_string` has been renamed to `cookies`.
+- In the `site` section, `cookie_string` has been renamed to `cookie`.
 
 #### Support for new Websites
 

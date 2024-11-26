@@ -15,30 +15,25 @@ type Factory func(cookieString *string) (manga.Extractor, error)
 
 var domainRegistry = map[string]Factory{
 	"comic-walker.com":          factorize(comic_walker.New),
-	"shonenjumpplus.com":        factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-zenon.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"pocket.shonenmagazine.com": factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-gardo.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"magcomi.com":               factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"shonenjumpplus.com":        factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-zenon.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"pocket.shonenmagazine.com": factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-gardo.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"magcomi.com":               factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
 	"tonarinoyj.jp":             factorize(giga_viewer.New),
-	"comic-ogyaaa.com":          factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-ogyaaa.com":          factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
 	"comic-action.com":          factorize(giga_viewer.New),
 	"comic-days.com":            factorize(giga_viewer.New),
-	"comic-growl.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-earthstar.com":       factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comicborder.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-trail.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-growl.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-earthstar.com":       factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comicborder.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-trail.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
 	"kuragebunch.com":           factorize(giga_viewer.New),
 	"viewer.heros-web.com":      factorize(giga_viewer.New),
-	"www.sunday-webry.com":      factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
-	"www.cmoa.jp": func(cookieString *string) (manga.Extractor, error) {
-		if cookieString != nil {
-			return cmoa.New(*cookieString), nil
-		}
-		return nil, manga.ErrCredentialsRequired
-	},
-	"www.corocoro.jp":        factorizeAuthorized(corocoro.New, corocoro.NewAuthorized),
-	"storia.takeshobo.co.jp": factorize(storia_takeshobo.New),
+	"www.sunday-webry.com":      factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
+	"www.cmoa.jp":               factorizeAuthorizationRequired(cmoa.New),
+	"www.corocoro.jp":           factorizeAuthorizationOptional(corocoro.New, corocoro.NewAuthorized),
+	"storia.takeshobo.co.jp":    factorize(storia_takeshobo.New),
 }
 
 func factorize[T func() manga.Extractor](fn T) Factory {
@@ -47,8 +42,16 @@ func factorize[T func() manga.Extractor](fn T) Factory {
 	}
 }
 
-// factorizeAuthorized used for create Factory with optional authorization
-func factorizeAuthorized[T func() manga.Extractor, E func(string) manga.Extractor](fn T, fnWithAuth E) Factory {
+func factorizeAuthorizationRequired[T func(string) manga.Extractor](fn T) Factory {
+	return func(cookieString *string) (manga.Extractor, error) {
+		if cookieString != nil {
+			return fn(*cookieString), nil
+		}
+		return nil, manga.ErrCredentialsRequired
+	}
+}
+
+func factorizeAuthorizationOptional[T func() manga.Extractor, E func(string) manga.Extractor](fn T, fnWithAuth E) Factory {
 	return func(cookieString *string) (manga.Extractor, error) {
 		if cookieString != nil {
 			return fnWithAuth(*cookieString), nil
@@ -62,9 +65,8 @@ func getSession(cfg *config.Config, hostname string) *string {
 	if cfg.PrimaryCookie != nil {
 		return cfg.PrimaryCookie
 	}
-
-	if site, exists := cfg.Sites[hostname]; exists && site.CookieString != nil {
-		return site.CookieString
+	if site, exists := cfg.Sites[hostname]; exists && site.Cookie != nil {
+		return site.Cookie
 	}
 	return nil
 }
@@ -74,6 +76,5 @@ func NewExtractor(cfg *config.Config, hostname string) (manga.Extractor, error) 
 	if !exists {
 		return nil, fmt.Errorf("unsupported website: %s", hostname)
 	}
-
 	return factory(getSession(cfg, hostname))
 }
