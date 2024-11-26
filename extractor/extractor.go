@@ -11,68 +11,51 @@ import (
 	"github.com/sekiju/mdl/sdk/manga"
 )
 
-type Factory func(cookieString *string) manga.Extractor
+type Factory func(cookieString *string) (manga.Extractor, error)
 
-var registry = map[string]Factory{
-	"comic-walker.com": func(session *string) manga.Extractor {
-		return comic_walker.New()
-	},
-	"shonenjumpplus.com":        gigaViewer("shonenjumpplus.com"),
-	"comic-zenon.com":           gigaViewer("comic-zenon.com"),
-	"pocket.shonenmagazine.com": gigaViewer("pocket.shonenmagazine.com"),
-	"comic-gardo.com":           gigaViewer("comic-gardo.com"),
-	"magcomi.com":               gigaViewer("magcomi.com"),
-	"tonarinoyj.jp":             gigaViewerNoCookies("tonarinoyj.jp"),
-	"comic-ogyaaa.com":          gigaViewerNoCookies("comic-ogyaaa.com"),
-	"comic-action.com":          gigaViewer("comic-action.com"),
-	"comic-days.com":            gigaViewer("comic-days.com"),
-	"comic-growl.com":           gigaViewerNoCookies("comic-growl.com"),
-	"comic-earthstar.com":       gigaViewerNoCookies("comic-earthstar.com"),
-	"comicborder.com":           gigaViewerNoCookies("comicborder.com"),
-	"comic-trail.com":           gigaViewerNoCookies("comic-trail.com"),
-	"kuragebunch.com":           gigaViewer("kuragebunch.com"),
-	"viewer.heros-web.com":      gigaViewer("viewer.heros-web.com"),
-	"www.sunday-webry.com":      gigaViewerNoCookies("www.sunday-webry.com"),
-	"www.cmoa.jp": func(cookieString *string) manga.Extractor {
+var domainRegistry = map[string]Factory{
+	"comic-walker.com":          factorize(comic_walker.New),
+	"shonenjumpplus.com":        factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-zenon.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"pocket.shonenmagazine.com": factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-gardo.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"magcomi.com":               factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"tonarinoyj.jp":             factorize(giga_viewer.New),
+	"comic-ogyaaa.com":          factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-action.com":          factorize(giga_viewer.New),
+	"comic-days.com":            factorize(giga_viewer.New),
+	"comic-growl.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-earthstar.com":       factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comicborder.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"comic-trail.com":           factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"kuragebunch.com":           factorize(giga_viewer.New),
+	"viewer.heros-web.com":      factorize(giga_viewer.New),
+	"www.sunday-webry.com":      factorizeAuthorized(giga_viewer.New, giga_viewer.NewAuthorized),
+	"www.cmoa.jp": func(cookieString *string) (manga.Extractor, error) {
 		if cookieString != nil {
-			return cmoa.New(*cookieString)
+			return cmoa.New(*cookieString), nil
 		}
-		return nil
+		return nil, manga.ErrCredentialsRequired
 	},
-	"www.corocoro.jp": func(cookieString *string) manga.Extractor {
-		if cookieString != nil {
-			return corocoro.NewAuthorized(*cookieString)
-		}
-		return corocoro.New()
-	},
-	"storia.takeshobo.co.jp": func(cookieString *string) manga.Extractor {
-		return storia_takeshobo.New()
-	},
+	"www.corocoro.jp":        factorizeAuthorized(corocoro.New, corocoro.NewAuthorized),
+	"storia.takeshobo.co.jp": factorize(storia_takeshobo.New),
 }
 
-func gigaViewer(hostname string) Factory {
-	return func(cookieString *string) manga.Extractor {
-		if cookieString != nil {
-			return giga_viewer.NewAuthorized(hostname, *cookieString)
-		}
-		return giga_viewer.New(hostname)
+func factorize[T func() manga.Extractor](fn T) Factory {
+	return func(cookieString *string) (manga.Extractor, error) {
+		return fn(), nil
 	}
 }
 
-func gigaViewerNoCookies(hostname string) Factory {
-	return func(cookieString *string) manga.Extractor {
-		return giga_viewer.New(hostname)
-	}
-}
+// factorizeAuthorized used for create Factory with optional authorization
+func factorizeAuthorized[T func() manga.Extractor, E func(string) manga.Extractor](fn T, fnWithAuth E) Factory {
+	return func(cookieString *string) (manga.Extractor, error) {
+		if cookieString != nil {
+			return fnWithAuth(*cookieString), nil
+		}
 
-func NewExtractor(cfg *config.Config, hostname string) (manga.Extractor, error) {
-	factory, exists := registry[hostname]
-	if !exists {
-		return nil, fmt.Errorf("unsupported website: %s", hostname)
+		return fn(), nil
 	}
-
-	session := getSession(cfg, hostname)
-	return factory(session), nil
 }
 
 func getSession(cfg *config.Config, hostname string) *string {
@@ -84,4 +67,13 @@ func getSession(cfg *config.Config, hostname string) *string {
 		return site.CookieString
 	}
 	return nil
+}
+
+func NewExtractor(cfg *config.Config, hostname string) (manga.Extractor, error) {
+	factory, exists := domainRegistry[hostname]
+	if !exists {
+		return nil, fmt.Errorf("unsupported website: %s", hostname)
+	}
+
+	return factory(getSession(cfg, hostname))
 }

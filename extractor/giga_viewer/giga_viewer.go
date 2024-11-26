@@ -9,8 +9,7 @@ import (
 )
 
 type Extractor struct {
-	hostname     string
-	CookieString *string
+	cookie *string
 }
 
 type searchFn func(URL string) ([]*manga.Chapter, error)
@@ -107,8 +106,8 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 
 func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	req := htt.New().SetHeader("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1")
-	if e.CookieString != nil {
-		req.SetHeader("Cookie", *e.CookieString)
+	if e.cookie != nil {
+		req.SetHeader("Cookie", *e.cookie)
 	}
 
 	res, err := req.Get(chapter.URL)
@@ -158,10 +157,10 @@ func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 	return chapterPages, nil
 }
 
-func New(hostname string) manga.Extractor {
-	return &Extractor{hostname: hostname}
+func New() manga.Extractor {
+	return new(Extractor)
 }
 
-func NewAuthorized(hostname, cookieString string) manga.Extractor {
-	return &Extractor{hostname: hostname, CookieString: &cookieString}
+func NewAuthorized(cookie string) manga.Extractor {
+	return &Extractor{cookie: &cookie}
 }

@@ -85,7 +85,7 @@ func (d *Downloader) run() {
 
 			ext, err := d.newExtractor(parsedURL.Hostname())
 			if err != nil {
-				log.Error().Str("url", queueInfo.URL).Msg("Website unsupported")
+				log.Error().Err(err).Str("url", queueInfo.URL).Send()
 				return
 			}
 
