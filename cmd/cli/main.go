@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/config"
+	"github.com/sekiju/mdl/constant"
 	"github.com/sekiju/mdl/downloader"
 	"github.com/sekiju/mdl/extractor"
 	"github.com/sekiju/mdl/internal/util"
@@ -53,7 +55,29 @@ func getChapterURLs() []string {
 	return strings.Split(strings.TrimSpace(input), " ")
 }
 
+func parse() string {
+	rootFlags := flag.NewFlagSet(constant.MDL, flag.ExitOnError)
+	primaryCookie := rootFlags.String("cookie", "", "Cookie string for the current session")
+	configPath := rootFlags.String("config", "config.hcl", "Path to the config file")
+
+	if len(os.Args) > 1 && os.Args[1] == "chapters" {
+		config.Params.ListChaptersMode = true
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+	}
+
+	if err := rootFlags.Parse(os.Args[1:]); err != nil {
+		log.Fatal().Err(err).Send()
+	}
+
+	config.Params.DownloadChapters = rootFlags.Args()
+	config.Params.PrimaryCookie = primaryCookie
+
+	return *configPath
+}
+
 func run() error {
+	config.Load(parse())
+
 	if config.Params.Application.CheckUpdates {
 		if err := checkForUpdates(); err != nil {
 			return err

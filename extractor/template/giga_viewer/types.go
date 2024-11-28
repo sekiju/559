@@ -1,6 +1,6 @@
 package giga_viewer
 
-type EpisodeResult struct {
+type episodeResult struct {
 	ReadableProduct struct {
 		FinishReadingNotificationUri interface{} `json:"finishReadingNotificationUri"`
 		HasPurchased                 bool        `json:"hasPurchased"`
@@ -9,7 +9,7 @@ type EpisodeResult struct {
 		NextReadableProductUri       *string     `json:"nextReadableProductUri"`
 		Number                       int         `json:"number"`
 		PageStructure                *struct {
-			Pages []EpisodeResultPage `json:"pages"`
+			Pages []episodeResultPage `json:"pages"`
 		} `json:"pageStructure"`
 		Permalink              string  `json:"permalink"`
 		PrevReadableProductUri *string `json:"prevReadableProductUri"`
@@ -17,7 +17,7 @@ type EpisodeResult struct {
 	} `json:"readableProduct"`
 }
 
-type EpisodeResultPage struct {
+type episodeResultPage struct {
 	Type string `json:"type"`
 	Src  string `json:"src,omitempty"`
 }

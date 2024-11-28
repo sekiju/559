@@ -40,28 +40,28 @@ func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
 			return nil, err
 		}
 
-		episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+		episode, err := util.ExtractJSONFromHTML[episodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 		if err != nil {
 			return nil, err
 		}
 
 		chapters = append(chapters, &manga.Chapter{
-			ID:      episodeResult.ReadableProduct.Id,
-			Number:  strconv.Itoa(episodeResult.ReadableProduct.Number),
-			Title:   episodeResult.ReadableProduct.Title,
-			Index:   uint(episodeResult.ReadableProduct.Number - 1),
-			URL:     episodeResult.ReadableProduct.Permalink,
-			MangaID: episodeResult.ReadableProduct.Id,
+			ID:      episode.ReadableProduct.Id,
+			Number:  strconv.Itoa(episode.ReadableProduct.Number),
+			Title:   episode.ReadableProduct.Title,
+			Index:   uint(episode.ReadableProduct.Number - 1),
+			URL:     episode.ReadableProduct.Permalink,
+			MangaID: episode.ReadableProduct.Id,
 		})
 
-		if prevURI := episodeResult.ReadableProduct.PrevReadableProductUri; prevURI != nil {
+		if prevURI := episode.ReadableProduct.PrevReadableProductUri; prevURI != nil {
 			_, err = fn(*prevURI)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		if nextURI := episodeResult.ReadableProduct.NextReadableProductUri; nextURI != nil {
+		if nextURI := episode.ReadableProduct.NextReadableProductUri; nextURI != nil {
 			_, err = fn(*nextURI)
 			if err != nil {
 				return nil, err
@@ -89,18 +89,18 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 		return nil, err
 	}
 
-	episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+	episode, err := util.ExtractJSONFromHTML[episodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 	if err != nil {
 		return nil, err
 	}
 
 	return &manga.Chapter{
-		ID:      episodeResult.ReadableProduct.Id,
-		Number:  strconv.Itoa(episodeResult.ReadableProduct.Number),
-		Title:   episodeResult.ReadableProduct.Title,
-		Index:   uint(episodeResult.ReadableProduct.Number - 1),
-		URL:     episodeResult.ReadableProduct.Permalink,
-		MangaID: episodeResult.ReadableProduct.Id,
+		ID:      episode.ReadableProduct.Id,
+		Number:  strconv.Itoa(episode.ReadableProduct.Number),
+		Title:   episode.ReadableProduct.Title,
+		Index:   uint(episode.ReadableProduct.Number - 1),
+		URL:     episode.ReadableProduct.Permalink,
+		MangaID: episode.ReadableProduct.Id,
 	}, nil
 }
 
@@ -125,17 +125,17 @@ func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 		return nil, err
 	}
 
-	episodeResult, err := util.ExtractJSONFromHTML[EpisodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
+	episode, err := util.ExtractJSONFromHTML[episodeResult](html, `<script id='episode-json' type='text/json' data-value='`, `'></script>`)
 	if err != nil {
 		return nil, err
 	}
 
-	if !episodeResult.ReadableProduct.IsPublic && !episodeResult.ReadableProduct.HasPurchased {
+	if !episode.ReadableProduct.IsPublic && !episode.ReadableProduct.HasPurchased {
 		return nil, manga.ErrPaidChapter
 	}
 
-	var mainPages []*EpisodeResultPage
-	for _, page := range episodeResult.ReadableProduct.PageStructure.Pages {
+	var mainPages []*episodeResultPage
+	for _, page := range episode.ReadableProduct.PageStructure.Pages {
 		if page.Type != "main" {
 			continue
 		}
