@@ -13,7 +13,7 @@ import (
 )
 
 func (d *Downloader) Queue(URL string) {
-	qi := &QueueInfo{URL: URL}
+	qi := &queueInfo{URL: URL}
 
 	log.Debug().Msgf("New queue item with URL: %s", URL)
 
@@ -26,10 +26,10 @@ func (d *Downloader) Stop() {
 	d.wg.Wait()
 }
 
-func (d *Downloader) downloadImages(qi *QueueInfo) error {
-	destination := filepath.Join(d.downloadDir, qi.ChapterID)
+func (d *Downloader) downloadImages(qi *queueInfo) error {
+	destination := filepath.Join(config.Params.Output.Directory, qi.ChapterID)
 
-	if _, err := os.Stat(destination); err == nil && d.cleanDestination {
+	if _, err := os.Stat(destination); err == nil && config.Params.Output.CleanOnStart {
 		if err = os.RemoveAll(destination); err != nil {
 			return err
 		}
@@ -41,7 +41,7 @@ func (d *Downloader) downloadImages(qi *QueueInfo) error {
 	}
 
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, d.batchSize)
+	semaphore := make(chan struct{}, config.Params.Application.MaxParallelDownloads)
 
 	for _, page := range qi.Pages {
 		semaphore <- struct{}{}
@@ -67,36 +67,36 @@ func (d *Downloader) downloadImages(qi *QueueInfo) error {
 func (d *Downloader) run() {
 	semaphore := make(chan struct{}, 1)
 
-	for queueInfo := range d.ch {
+	for qi := range d.ch {
 		semaphore <- struct{}{}
-		go func(queueInfo *QueueInfo) {
+		go func(qi *queueInfo) {
 			defer func() {
 				<-semaphore
 				d.wg.Done()
 			}()
 
-			log.Info().Str("url", queueInfo.URL).Msg("Downloading next chapter in queue")
+			log.Info().Str("url", qi.URL).Msg("Downloading next chapter in queue")
 			start := time.Now()
 
-			parsedURL, err := url.Parse(queueInfo.URL)
+			parsedURL, err := url.Parse(qi.URL)
 			if err != nil {
-				log.Error().Str("url", queueInfo.URL).Err(err).Msg("Invalid chapter URL")
+				log.Error().Str("url", qi.URL).Err(err).Msg("Invalid chapter URL")
 				return
 			}
 
 			ext, err := extractor.NewExtractor(parsedURL.Hostname())
 			if err != nil {
-				log.Error().Err(err).Str("url", queueInfo.URL).Send()
+				log.Error().Err(err).Str("url", qi.URL).Send()
 				return
 			}
 
-			chapter, err := ext.FindChapter(queueInfo.URL)
+			chapter, err := ext.FindChapter(qi.URL)
 			if err != nil {
-				log.Error().Str("url", queueInfo.URL).Err(err).Msg("Failed to find chapter")
+				log.Error().Str("url", qi.URL).Err(err).Msg("Failed to find chapter")
 				return
 			}
 
-			queueInfo.ChapterID = chapter.ID
+			qi.ChapterID = chapter.ID
 
 			pages, err := ext.FindChapterPages(chapter)
 			if err != nil {
@@ -104,22 +104,22 @@ func (d *Downloader) run() {
 				return
 			}
 
-			queueInfo.Pages = pages
+			qi.Pages = pages
 
-			if err = d.downloadImages(queueInfo); err != nil {
-				log.Error().Str("chapterId", queueInfo.ChapterID).Err(err).Msg("Failed to download chapter")
+			if err = d.downloadImages(qi); err != nil {
+				log.Error().Str("chapterId", qi.ChapterID).Err(err).Msg("Failed to download chapter")
 				return
 			}
 
-			log.Info().Str("chapterId", queueInfo.ChapterID).Str("duration", time.Since(start).String()).Msg("Download complete")
+			log.Info().Str("chapterId", qi.ChapterID).Str("duration", time.Since(start).String()).Msg("Download complete")
 
-		}(queueInfo)
+		}(qi)
 	}
 }
 
-func NewDownloader(opts *NewDownloaderOptions) *Downloader {
-	var downloadFunc DownloadPageFunc
-	if opts.OutputFileFormat == config.AutoOutputFormat {
+func NewDownloader() *Downloader {
+	var downloadFunc downloadPageFunc
+	if config.Params.Output.FileFormat == config.AutoOutputFormat {
 		downloadFunc = func(dir string, page *manga.Page) error {
 			r, err := getReader(page)
 			if err != nil {
@@ -135,17 +135,11 @@ func NewDownloader(opts *NewDownloaderOptions) *Downloader {
 				return err
 			}
 
-			return saveEncodedImage(dir, page.Filename, opts.OutputFileFormat, r)
+			return saveEncodedImage(dir, page.Filename, config.Params.Output.FileFormat, r)
 		}
 	}
 
-	d := &Downloader{
-		ch:               make(chan *QueueInfo),
-		downloadPage:     downloadFunc,
-		batchSize:        opts.BatchSize,
-		cleanDestination: opts.CleanDestination,
-		downloadDir:      opts.Directory,
-	}
+	d := &Downloader{ch: make(chan *queueInfo), downloadPage: downloadFunc}
 
 	go d.run()
 

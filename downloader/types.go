@@ -1,34 +1,20 @@
 package downloader
 
 import (
-	"github.com/sekiju/mdl/config"
 	"github.com/sekiju/mdl/sdk/manga"
 	"sync"
 )
 
 type (
-	DownloadPageFunc func(dir string, page *manga.Page) error
-
-	NewExtractorFunc func(hostname string) (manga.Extractor, error)
+	downloadPageFunc func(dir string, page *manga.Page) error
 
 	Downloader struct {
-		ch               chan *QueueInfo
-		wg               sync.WaitGroup
-		cleanDestination bool
-		downloadDir      string
-		batchSize        int
-		downloadPage     DownloadPageFunc
+		ch           chan *queueInfo
+		wg           sync.WaitGroup
+		downloadPage downloadPageFunc
 	}
 
-	NewDownloaderOptions struct {
-		BatchSize        int
-		Directory        string
-		CleanDestination bool
-		OutputFileFormat config.OutputFileFormat
-		NewExtractor     NewExtractorFunc
-	}
-
-	QueueInfo struct {
+	queueInfo struct {
 		URL       string
 		ChapterID string
 		Pages     []*manga.Page

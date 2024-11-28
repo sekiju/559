@@ -1,11 +1,5 @@
 package config
 
-type arguments struct {
-	Cookie       string
-	ConfigPath   string
-	ListChapters bool
-}
-
 type config struct {
 	PrimaryCookie    *string
 	ListChaptersMode bool

@@ -2,8 +2,8 @@ package giga_viewer
 
 import (
 	"github.com/sekiju/htt"
+	"github.com/sekiju/mdl/extractor/util"
 	"github.com/sekiju/mdl/internal/renamer"
-	"github.com/sekiju/mdl/internal/util"
 	"github.com/sekiju/mdl/sdk/manga"
 	"strconv"
 )

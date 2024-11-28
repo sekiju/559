@@ -87,12 +87,7 @@ func run() error {
 	} else {
 		// Default download mode
 
-		loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
-			BatchSize:        config.Params.Application.MaxParallelDownloads,
-			Directory:        config.Params.Output.Directory,
-			CleanDestination: config.Params.Output.CleanOnStart,
-			OutputFileFormat: config.Params.Output.FileFormat,
-		})
+		loader := downloader.NewDownloader()
 
 		for _, chapterURL := range chapterURLs {
 			loader.Queue(chapterURL)
