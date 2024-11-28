@@ -14,6 +14,7 @@ import (
 	"github.com/sekiju/mdl/internal/downloader"
 	"github.com/sekiju/mdl/internal/util"
 	"github.com/sekiju/mdl/sdk/manga"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
@@ -65,23 +66,48 @@ func run() error {
 		return err
 	}
 
-	loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
-		BatchSize:        cfg.Application.MaxParallelDownloads,
-		Directory:        cfg.Output.Directory,
-		CleanDestination: cfg.Output.CleanOnStart,
-		OutputFileFormat: cfg.Output.FileFormat,
-		NewExtractor: func(hostname string) (manga.Extractor, error) {
-			return extractor.NewExtractor(cfg, hostname)
-		},
-	})
-
 	chapterURLs := getChapterURLs()
 
-	for _, chapterURL := range chapterURLs {
-		loader.Queue(chapterURL)
-	}
+	if cfg.ListChaptersMode {
+		for _, chapterURL := range chapterURLs {
+			parsedURL, err := url.Parse(chapterURL)
+			if err != nil {
+				return err
+			}
 
-	loader.Stop()
+			ext, err := extractor.NewExtractor(cfg, parsedURL.Hostname())
+			if err != nil {
+				return err
+			}
+
+			chapters, err := ext.FindChapters(chapterURL)
+			if err != nil {
+				return err
+			}
+
+			for _, chapter := range chapters {
+				fmt.Println(chapter.ID, chapter.Title, chapter.URL)
+			}
+		}
+	} else {
+		// Default download mode
+
+		loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
+			BatchSize:        cfg.Application.MaxParallelDownloads,
+			Directory:        cfg.Output.Directory,
+			CleanDestination: cfg.Output.CleanOnStart,
+			OutputFileFormat: cfg.Output.FileFormat,
+			NewExtractor: func(hostname string) (manga.Extractor, error) {
+				return extractor.NewExtractor(cfg, hostname)
+			},
+		})
+
+		for _, chapterURL := range chapterURLs {
+			loader.Queue(chapterURL)
+		}
+
+		loader.Stop()
+	}
 
 	return nil
 }

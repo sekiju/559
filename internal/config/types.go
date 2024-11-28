@@ -1,12 +1,14 @@
 package config
 
 type arguments struct {
-	Cookie     string
-	ConfigPath string
+	Cookie       string
+	ConfigPath   string
+	ListChapters bool
 }
 
 type Config struct {
-	PrimaryCookie *string
+	PrimaryCookie    *string
+	ListChaptersMode bool
 
 	Application application     `koanf:"application"`
 	Output      output          `koanf:"output"`

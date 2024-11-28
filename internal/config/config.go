@@ -21,7 +21,8 @@ func New() (*Config, error) {
 	})
 
 	c := Config{
-		PrimaryCookie: ptr.String(args.Cookie),
+		PrimaryCookie:    ptr.String(args.Cookie),
+		ListChaptersMode: args.ListChapters,
 		Application: application{
 			CheckUpdates:         true,
 			MaxParallelDownloads: 4,
@@ -49,6 +50,7 @@ func parseArguments() (*arguments, error) {
 
 	flag.StringVar(&args.Cookie, "cookie", "", "Cookie string for the current session")
 	flag.StringVar(&args.ConfigPath, "config", "config.hcl", "Path to the config file (default: config.yaml)")
+	flag.BoolVar(&args.ListChapters, "chapters", false, "List chapters from passed URL")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: mdl [OPTIONS] chapterURL [chapterURLs...]\n")

@@ -5,6 +5,7 @@ import (
 	"github.com/sekiju/mdl/extractor/cmoa"
 	"github.com/sekiju/mdl/extractor/comic_walker"
 	"github.com/sekiju/mdl/extractor/corocoro"
+	"github.com/sekiju/mdl/extractor/ganma"
 	"github.com/sekiju/mdl/extractor/giga_viewer"
 	"github.com/sekiju/mdl/extractor/storia_takeshobo"
 	"github.com/sekiju/mdl/internal/config"
@@ -34,6 +35,7 @@ var domainRegistry = map[string]Factory{
 	"www.cmoa.jp":               factorizeAuthorizationRequired(cmoa.New),
 	"www.corocoro.jp":           factorizeAuthorizationOptional(corocoro.New, corocoro.NewAuthorized),
 	"storia.takeshobo.co.jp":    factorize(storia_takeshobo.New),
+	"ganma.jp":                  factorizeAuthorizationRequiredWithError(ganma.New),
 }
 
 func factorize[T func() manga.Extractor](fn T) Factory {
@@ -46,6 +48,15 @@ func factorizeAuthorizationRequired[T func(string) manga.Extractor](fn T) Factor
 	return func(cookieString *string) (manga.Extractor, error) {
 		if cookieString != nil {
 			return fn(*cookieString), nil
+		}
+		return nil, manga.ErrCredentialsRequired
+	}
+}
+
+func factorizeAuthorizationRequiredWithError[T func(string) (manga.Extractor, error)](fn T) Factory {
+	return func(cookieString *string) (manga.Extractor, error) {
+		if cookieString != nil {
+			return fn(*cookieString)
 		}
 		return nil, manga.ErrCredentialsRequired
 	}
