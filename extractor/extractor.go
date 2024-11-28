@@ -6,8 +6,8 @@ import (
 	"github.com/sekiju/mdl/extractor/comic_walker"
 	"github.com/sekiju/mdl/extractor/corocoro"
 	"github.com/sekiju/mdl/extractor/ganma"
-	"github.com/sekiju/mdl/extractor/giga_viewer"
 	"github.com/sekiju/mdl/extractor/storia_takeshobo"
+	"github.com/sekiju/mdl/extractor/template/giga_viewer"
 	"github.com/sekiju/mdl/internal/config"
 	"github.com/sekiju/mdl/sdk/manga"
 )

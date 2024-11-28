@@ -73,57 +73,53 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 		return nil, manga.ErrInvalidURLFormat
 	}
 
+	var mangaID string
 	if util.IsValidUUID(matches[1]) {
-		res, err := htt.New().
-			SetHeader("Cookie", e.cookie).
-			SetHeader("X-From", "https://reader.ganma.jp/api/").
-			Getf("https://reader.ganma.jp/api/3.2/magazines/%s", matches[1])
+		mangaID = matches[1]
+	} else {
+		res, err := htt.New().Get(URL)
 		if err != nil {
 			return nil, err
 		}
 
-		var magazine magazineResult
-		if err = res.JSON(&magazine); err != nil {
+		text, err := res.Text()
+		if err != nil {
 			return nil, err
 		}
 
-		for _, item := range magazine.Root.Items {
-			if item.StoryId == matches[2] {
-				return &manga.Chapter{
-					ID:      item.StoryId,
-					Number:  strconv.Itoa(item.Number),
-					Title:   item.Title,
-					Index:   0,
-					URL:     fmt.Sprintf("https://ganma.jp/web/reader/%s/%s/0", magazine.Root.Id, item.StoryId),
-					MangaID: magazine.Root.Id,
-				}, nil
-			}
+		mangaID, err = util.ExtractStringFromHTML(text, `\"magazineId\":\"`, `\"`)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	res, err := htt.New().Get(URL)
+	res, err := htt.New().
+		SetHeader("Cookie", e.cookie).
+		SetHeader("X-From", "https://reader.ganma.jp/api/").
+		Getf("https://reader.ganma.jp/api/3.2/magazines/%s", mangaID)
 	if err != nil {
 		return nil, err
 	}
 
-	text, err := res.Text()
-	if err != nil {
+	var magazine magazineResult
+	if err = res.JSON(&magazine); err != nil {
 		return nil, err
 	}
 
-	mangaID, err := util.ExtractStringFromHTML(text, `\"magazineId\":\"`, `\"`)
-	if err != nil {
-		return nil, err
+	for _, item := range magazine.Root.Items {
+		if item.StoryId == matches[2] {
+			return &manga.Chapter{
+				ID:      item.StoryId,
+				Number:  strconv.Itoa(item.Number),
+				Title:   item.Title,
+				Index:   0,
+				URL:     fmt.Sprintf("https://ganma.jp/web/reader/%s/%s/0", magazine.Root.Id, item.StoryId),
+				MangaID: magazine.Root.Id,
+			}, nil
+		}
 	}
 
-	return &manga.Chapter{
-		ID:      matches[2],
-		Number:  "",
-		Title:   "",
-		Index:   0,
-		URL:     URL,
-		MangaID: mangaID,
-	}, nil
+	return nil, manga.ErrChapterNotFound
 }
 
 func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {

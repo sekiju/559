@@ -3,7 +3,7 @@ package storia_takeshobo
 import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sekiju/htt"
-	"github.com/sekiju/mdl/extractor/speed_binb"
+	"github.com/sekiju/mdl/extractor/template/speed_binb"
 	"github.com/sekiju/mdl/sdk/manga"
 	"regexp"
 )
