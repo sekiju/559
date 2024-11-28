@@ -10,11 +10,13 @@ import (
 	"strconv"
 )
 
-type Extractor struct{}
+type Extractor struct {
+	settings *manga.Settings
+}
 
 type searchFn func(episodeID string) ([]*manga.Chapter, error)
 
-func (p *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
+func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
 	parsedURL, err := parseURL(URL)
 	if err != nil {
 		return nil, err
@@ -76,7 +78,7 @@ func (p *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
 	return fn(episodeResult.Episode.Id)
 }
 
-func (p *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
+func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 	parsedURL, err := parseURL(URL)
 	if err != nil {
 		return nil, err
@@ -106,7 +108,7 @@ func (p *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 	}, nil
 }
 
-func (p *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {
+func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	res, err := htt.New().Getf("https://comic-walker.com/api/contents/viewer?episodeId=%s&imageSizeType=width%%3A1284", chapter.ID)
 	if err != nil {
 		return nil, err
@@ -150,8 +152,12 @@ func (p *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 	return pages, nil
 }
 
-func New() manga.Extractor {
-	return &Extractor{}
+func (e *Extractor) SetSettings(settings manga.Settings) {
+	e.settings = &settings
+}
+
+func New() (manga.Extractor, error) {
+	return &Extractor{settings: &manga.Settings{}}, nil
 }
 
 var re = regexp.MustCompile("https://comic-walker.com/detail/(KC_[a-zA-Z0-9_]*)(/episodes/(KC_[a-zA-Z0-9_]*))?")

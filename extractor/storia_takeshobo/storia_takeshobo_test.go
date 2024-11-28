@@ -6,7 +6,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	ext := New()
+	ext, _ := New()
 
 	t.Run("FindChapter", func(t *testing.T) {
 		chapter, err := ext.FindChapter("https://storia.takeshobo.co.jp/_files/mahoako/01/")

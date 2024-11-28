@@ -3,7 +3,6 @@ package ganma
 import (
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"github.com/sekiju/htt"
 	"github.com/sekiju/mdl/internal/renamer"
 	"github.com/sekiju/mdl/internal/util"
@@ -14,7 +13,7 @@ import (
 )
 
 type Extractor struct {
-	cookie string
+	settings *manga.Settings
 }
 
 const (
@@ -22,6 +21,10 @@ const (
 )
 
 func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
+	if e.settings.Cookie == nil {
+		return nil, manga.ErrCredentialsRequired
+	}
+
 	res, err := htt.New().Get(URL)
 	if err != nil {
 		return nil, err
@@ -38,7 +41,7 @@ func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
 	}
 
 	res, err = htt.New().
-		SetHeader("Cookie", e.cookie).
+		SetHeader("Cookie", *e.settings.Cookie).
 		SetHeader("X-From", "https://reader.ganma.jp/api/").
 		Getf("https://reader.ganma.jp/api/3.2/magazines/%s", mangaID)
 	if err != nil {
@@ -73,6 +76,10 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 		return nil, manga.ErrInvalidURLFormat
 	}
 
+	if e.settings.Cookie == nil {
+		return nil, manga.ErrCredentialsRequired
+	}
+
 	var mangaID string
 	if util.IsValidUUID(matches[1]) {
 		mangaID = matches[1]
@@ -94,7 +101,7 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 	}
 
 	res, err := htt.New().
-		SetHeader("Cookie", e.cookie).
+		SetHeader("Cookie", *e.settings.Cookie).
 		SetHeader("X-From", "https://reader.ganma.jp/api/").
 		Getf("https://reader.ganma.jp/api/3.2/magazines/%s", mangaID)
 	if err != nil {
@@ -123,10 +130,8 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 }
 
 func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {
-	fmt.Println()
-
 	res, err := htt.New().
-		SetHeader("Cookie", e.cookie).
+		SetHeader("Cookie", *e.settings.Cookie).
 		SetHeader("X-From", "https://reader.ganma.jp/api/").
 		Getf(
 			"https://ganma.jp/api/graphql?operationName=MagazineStoryReaderQuery&variables=%s&extensions=%s",
@@ -158,37 +163,39 @@ func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 	return pages, nil
 }
 
-func New(cookie string) (manga.Extractor, error) {
-	if cookie == "CREATE" {
-		res, err := htt.New().SetHeader("X-From", "https://reader.ganma.jp/api/").Post("https://reader.ganma.jp/api/1.0/account")
-		if err != nil {
-			return nil, err
-		}
+func (e *Extractor) SetSettings(settings manga.Settings) {
+	e.settings = &settings
+}
 
-		if res.StatusCode != 200 {
-			return nil, errors.New("failed to create account")
-		}
-
-		var createAccount createAccountResponse
-		if err = res.JSON(&createAccount); err != nil {
-			return nil, err
-		}
-
-		res, err = htt.New().SetHeader("X-From", "https://reader.ganma.jp/api/").
-			Body(createAccount.Root).
-			Post("https://reader.ganma.jp/api/3.0/session")
-		if err != nil {
-			return nil, err
-		}
-
-		if res.StatusCode != 200 {
-			return nil, errors.New("failed to login with generated account")
-		}
-
-		cookie = res.Header.Get("Set-Cookie")
-
-		log.Info().Msgf("New cookie created for ganma.jp >>> %s", cookie)
+func (e *Extractor) GenerateCookie() (string, error) {
+	res, err := htt.New().SetHeader("X-From", "https://reader.ganma.jp/api/").Post("https://reader.ganma.jp/api/1.0/account")
+	if err != nil {
+		return "", err
 	}
 
-	return &Extractor{cookie}, nil
+	if res.StatusCode != 200 {
+		return "", errors.New("failed to create account")
+	}
+
+	var createAccount createAccountResponse
+	if err = res.JSON(&createAccount); err != nil {
+		return "", err
+	}
+
+	res, err = htt.New().SetHeader("X-From", "https://reader.ganma.jp/api/").
+		Body(createAccount.Root).
+		Post("https://reader.ganma.jp/api/3.0/session")
+	if err != nil {
+		return "", err
+	}
+
+	if res.StatusCode != 200 {
+		return "", errors.New("failed to login with generated account")
+	}
+
+	return res.Header.Get("Set-Cookie"), nil
+}
+
+func New() (manga.Extractor, error) {
+	return &Extractor{settings: &manga.Settings{}}, nil
 }

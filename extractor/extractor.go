@@ -2,6 +2,7 @@ package extractor
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/sekiju/mdl/extractor/cmoa"
 	"github.com/sekiju/mdl/extractor/comic_walker"
 	"github.com/sekiju/mdl/extractor/corocoro"
@@ -12,63 +13,57 @@ import (
 	"github.com/sekiju/mdl/sdk/manga"
 )
 
-type Factory func(cookieString *string) (manga.Extractor, error)
+type Factory func(cookie *string) (manga.Extractor, error)
 
 var domainRegistry = map[string]Factory{
-	"comic-walker.com":          factorize(comic_walker.New),
-	"shonenjumpplus.com":        factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-zenon.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"pocket.shonenmagazine.com": factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-gardo.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"magcomi.com":               factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"tonarinoyj.jp":             factorize(giga_viewer.New),
-	"comic-ogyaaa.com":          factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-action.com":          factorize(giga_viewer.New),
-	"comic-days.com":            factorize(giga_viewer.New),
-	"comic-growl.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-earthstar.com":       factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comicborder.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"comic-trail.com":           factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"kuragebunch.com":           factorize(giga_viewer.New),
-	"viewer.heros-web.com":      factorize(giga_viewer.New),
-	"www.sunday-webry.com":      factorizeAuthorizationOptional(giga_viewer.New, giga_viewer.NewAuthorized),
-	"www.cmoa.jp":               factorizeAuthorizationRequired(cmoa.New),
-	"www.corocoro.jp":           factorizeAuthorizationOptional(corocoro.New, corocoro.NewAuthorized),
-	"storia.takeshobo.co.jp":    factorize(storia_takeshobo.New),
-	"ganma.jp":                  factorizeAuthorizationRequiredWithError(ganma.New),
+	"comic-walker.com":          fz(comic_walker.New),
+	"shonenjumpplus.com":        fz(giga_viewer.New),
+	"comic-zenon.com":           fz(giga_viewer.New),
+	"pocket.shonenmagazine.com": fz(giga_viewer.New),
+	"comic-gardo.com":           fz(giga_viewer.New),
+	"magcomi.com":               fz(giga_viewer.New),
+	"tonarinoyj.jp":             fz(giga_viewer.New),
+	"comic-ogyaaa.com":          fz(giga_viewer.New),
+	"comic-action.com":          fz(giga_viewer.New),
+	"comic-days.com":            fz(giga_viewer.New),
+	"comic-growl.com":           fz(giga_viewer.New),
+	"comic-earthstar.com":       fz(giga_viewer.New),
+	"comicborder.com":           fz(giga_viewer.New),
+	"comic-trail.com":           fz(giga_viewer.New),
+	"kuragebunch.com":           fz(giga_viewer.New),
+	"viewer.heros-web.com":      fz(giga_viewer.New),
+	"www.sunday-webry.com":      fz(giga_viewer.New),
+	"www.cmoa.jp":               fz(cmoa.New),
+	"www.corocoro.jp":           fz(corocoro.New),
+	"storia.takeshobo.co.jp":    fz(storia_takeshobo.New),
+	"ganma.jp":                  fz(ganma.New),
 }
 
-func factorize[T func() manga.Extractor](fn T) Factory {
-	return func(cookieString *string) (manga.Extractor, error) {
-		return fn(), nil
-	}
-}
-
-func factorizeAuthorizationRequired[T func(string) manga.Extractor](fn T) Factory {
-	return func(cookieString *string) (manga.Extractor, error) {
-		if cookieString != nil {
-			return fn(*cookieString), nil
-		}
-		return nil, manga.ErrCredentialsRequired
-	}
-}
-
-func factorizeAuthorizationRequiredWithError[T func(string) (manga.Extractor, error)](fn T) Factory {
-	return func(cookieString *string) (manga.Extractor, error) {
-		if cookieString != nil {
-			return fn(*cookieString)
-		}
-		return nil, manga.ErrCredentialsRequired
-	}
-}
-
-func factorizeAuthorizationOptional[T func() manga.Extractor, E func(string) manga.Extractor](fn T, fnWithAuth E) Factory {
-	return func(cookieString *string) (manga.Extractor, error) {
-		if cookieString != nil {
-			return fnWithAuth(*cookieString), nil
+// fz is a generic helper function to create a Factory for manga.Extractor
+func fz[T func() (manga.Extractor, error)](fn T) Factory {
+	return func(cookie *string) (manga.Extractor, error) {
+		ext, err := fn()
+		if err != nil {
+			return nil, err
 		}
 
-		return fn(), nil
+		if cookie != nil {
+			ext.SetSettings(manga.Settings{Cookie: cookie})
+		} else {
+			cookieGenerator, ok := ext.(manga.GenerateCookieFeature)
+			if ok {
+				generatedCookie, err := cookieGenerator.GenerateCookie()
+				if err != nil {
+					return nil, err
+				}
+
+				log.Info().Msgf("Cookie generated >>> %s", generatedCookie)
+
+				ext.SetSettings(manga.Settings{Cookie: &generatedCookie})
+			}
+		}
+
+		return ext, nil
 	}
 }
 

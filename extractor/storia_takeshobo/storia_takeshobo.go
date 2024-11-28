@@ -8,7 +8,9 @@ import (
 	"regexp"
 )
 
-type Extractor struct{}
+type Extractor struct {
+	settings *manga.Settings
+}
 
 func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
 	//TODO implement me
@@ -47,6 +49,10 @@ func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 	return speed_binb.New().FindChapterPages(chapter)
 }
 
-func New() manga.Extractor {
-	return new(Extractor)
+func (e *Extractor) SetSettings(settings manga.Settings) {
+	e.settings = &settings
+}
+
+func New() (manga.Extractor, error) {
+	return &Extractor{settings: &manga.Settings{}}, nil
 }

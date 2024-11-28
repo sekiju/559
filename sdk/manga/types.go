@@ -5,9 +5,16 @@ type (
 		FindChapters(URL string) ([]*Chapter, error)
 		FindChapter(URL string) (*Chapter, error)
 		FindChapterPages(chapter *Chapter) ([]*Page, error)
+		SetSettings(settings Settings)
 	}
 
-	Error string
+	GenerateCookieFeature interface {
+		GenerateCookie() (string, error)
+	}
+
+	Settings struct {
+		Cookie *string
+	}
 
 	Chapter struct {
 		ID      string `json:"id"`

@@ -15,7 +15,7 @@ import (
 )
 
 type Extractor struct {
-	cookieString *string
+	settings *manga.Settings
 }
 
 func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
@@ -32,8 +32,8 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 	}
 
 	req := htt.New()
-	if e.cookieString != nil {
-		req.SetHeader("Cookie", *e.cookieString)
+	if e.settings.Cookie != nil {
+		req.SetHeader("Cookie", *e.settings.Cookie)
 	}
 
 	res, err := req.Get(URL)
@@ -63,8 +63,8 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 
 func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {
 	req := htt.New()
-	if e.cookieString != nil {
-		req.SetHeader("Cookie", *e.cookieString)
+	if e.settings.Cookie != nil {
+		req.SetHeader("Cookie", *e.settings.Cookie)
 	}
 
 	res, err := req.Get(chapter.URL)
@@ -124,10 +124,10 @@ func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, err
 	return pages, nil
 }
 
-func New() manga.Extractor {
-	return new(Extractor)
+func (e *Extractor) SetSettings(settings manga.Settings) {
+	e.settings = &settings
 }
 
-func NewAuthorized(cookieString string) manga.Extractor {
-	return &Extractor{cookieString: &cookieString}
+func New() (manga.Extractor, error) {
+	return &Extractor{settings: &manga.Settings{}}, nil
 }

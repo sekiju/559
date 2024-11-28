@@ -8,7 +8,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	ext := New()
+	ext, _ := New()
 
 	t.Run("FindChapters", func(t *testing.T) {
 		episodes, err := ext.FindChapters("https://comic-walker.com/detail/KC_005558_S/episodes/KC_0055580000200011_E?episodeType=first")

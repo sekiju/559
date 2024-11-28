@@ -8,7 +8,7 @@ import (
 )
 
 type Extractor struct {
-	cookieString string
+	settings *manga.Settings
 }
 
 func (e *Extractor) FindChapters(URL string) ([]*manga.Chapter, error) {
@@ -33,8 +33,12 @@ func (e *Extractor) FindChapter(URL string) (*manga.Chapter, error) {
 }
 
 func (e *Extractor) FindChapterPages(chapter *manga.Chapter) ([]*manga.Page, error) {
-	req := htt.New().SetHeader("Cookie", e.cookieString)
+	req := htt.New().SetHeader("Cookie", *e.settings.Cookie)
 	return speed_binb.New(req).FindChapterPages(chapter)
+}
+
+func (e *Extractor) SetSettings(settings manga.Settings) {
+	e.settings = &settings
 }
 
 var re = regexp.MustCompile(`https://www.cmoa.jp/bib/speedreader/[?&]cid=([^&]+)`)
@@ -48,6 +52,6 @@ func extractViewerID(URL string) (string, error) {
 	return matches[1], nil
 }
 
-func New(cookieString string) manga.Extractor {
-	return &Extractor{cookieString}
+func New() (manga.Extractor, error) {
+	return &Extractor{settings: &manga.Settings{}}, nil
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestProvider(t *testing.T) {
-	ext := New()
+	ext, _ := New()
 
 	t.Run("FindChapters", func(t *testing.T) {
 		episodes, err := ext.FindChapters("https://shonenjumpplus.com/episode/3269754496608909464")
