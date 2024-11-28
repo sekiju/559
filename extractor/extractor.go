@@ -3,13 +3,13 @@ package extractor
 import (
 	"fmt"
 	"github.com/rs/zerolog/log"
+	"github.com/sekiju/mdl/config"
 	"github.com/sekiju/mdl/extractor/cmoa"
 	"github.com/sekiju/mdl/extractor/comic_walker"
 	"github.com/sekiju/mdl/extractor/corocoro"
 	"github.com/sekiju/mdl/extractor/ganma"
 	"github.com/sekiju/mdl/extractor/storia_takeshobo"
 	"github.com/sekiju/mdl/extractor/template/giga_viewer"
-	"github.com/sekiju/mdl/internal/config"
 	"github.com/sekiju/mdl/sdk/manga"
 )
 
@@ -67,20 +67,20 @@ func fz[T func() (manga.Extractor, error)](fn T) Factory {
 	}
 }
 
-func getSession(cfg *config.Config, hostname string) *string {
-	if cfg.PrimaryCookie != nil {
-		return cfg.PrimaryCookie
+func getSession(hostname string) *string {
+	if config.Params.PrimaryCookie != nil {
+		return config.Params.PrimaryCookie
 	}
-	if site, exists := cfg.Sites[hostname]; exists && site.Cookie != nil {
+	if site, exists := config.Params.Sites[hostname]; exists && site.Cookie != nil {
 		return site.Cookie
 	}
 	return nil
 }
 
-func NewExtractor(cfg *config.Config, hostname string) (manga.Extractor, error) {
+func NewExtractor(hostname string) (manga.Extractor, error) {
 	factory, exists := domainRegistry[hostname]
 	if !exists {
 		return nil, fmt.Errorf("unsupported website: %s", hostname)
 	}
-	return factory(getSession(cfg, hostname))
+	return factory(getSession(hostname))
 }

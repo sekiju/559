@@ -1,7 +1,7 @@
 package downloader
 
 import (
-	"github.com/sekiju/mdl/internal/config"
+	"github.com/sekiju/mdl/config"
 	"github.com/sekiju/mdl/sdk/manga"
 	"sync"
 )
@@ -18,7 +18,6 @@ type (
 		downloadDir      string
 		batchSize        int
 		downloadPage     DownloadPageFunc
-		newExtractor     NewExtractorFunc
 	}
 
 	NewDownloaderOptions struct {

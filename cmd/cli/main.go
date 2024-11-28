@@ -2,18 +2,16 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sekiju/htt"
+	"github.com/sekiju/mdl/config"
+	"github.com/sekiju/mdl/downloader"
 	"github.com/sekiju/mdl/extractor"
-	"github.com/sekiju/mdl/internal/config"
-	"github.com/sekiju/mdl/internal/downloader"
 	"github.com/sekiju/mdl/internal/util"
-	"github.com/sekiju/mdl/sdk/manga"
 	"net/url"
 	"os"
 	"sort"
@@ -57,25 +55,22 @@ func getChapterURLs() []string {
 }
 
 func run() error {
-	cfg, err := config.New()
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	if cfg.Application.CheckUpdates && checkForUpdates() != nil {
-		return err
+	if config.Params.Application.CheckUpdates {
+		if err := checkForUpdates(); err != nil {
+			return err
+		}
 	}
 
 	chapterURLs := getChapterURLs()
 
-	if cfg.ListChaptersMode {
+	if config.Params.ListChaptersMode {
 		for _, chapterURL := range chapterURLs {
 			parsedURL, err := url.Parse(chapterURL)
 			if err != nil {
 				return err
 			}
 
-			ext, err := extractor.NewExtractor(cfg, parsedURL.Hostname())
+			ext, err := extractor.NewExtractor(parsedURL.Hostname())
 			if err != nil {
 				return err
 			}
@@ -93,13 +88,10 @@ func run() error {
 		// Default download mode
 
 		loader := downloader.NewDownloader(&downloader.NewDownloaderOptions{
-			BatchSize:        cfg.Application.MaxParallelDownloads,
-			Directory:        cfg.Output.Directory,
-			CleanDestination: cfg.Output.CleanOnStart,
-			OutputFileFormat: cfg.Output.FileFormat,
-			NewExtractor: func(hostname string) (manga.Extractor, error) {
-				return extractor.NewExtractor(cfg, hostname)
-			},
+			BatchSize:        config.Params.Application.MaxParallelDownloads,
+			Directory:        config.Params.Output.Directory,
+			CleanDestination: config.Params.Output.CleanOnStart,
+			OutputFileFormat: config.Params.Output.FileFormat,
 		})
 
 		for _, chapterURL := range chapterURLs {

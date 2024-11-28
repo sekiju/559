@@ -6,7 +6,7 @@ import (
 	"github.com/gen2brain/avif"
 	"github.com/gen2brain/webp"
 	"github.com/sekiju/htt"
-	"github.com/sekiju/mdl/internal/config"
+	"github.com/sekiju/mdl/config"
 	"github.com/sekiju/mdl/sdk/manga"
 	"image"
 	"image/jpeg"

@@ -2,7 +2,8 @@ package downloader
 
 import (
 	"github.com/rs/zerolog/log"
-	"github.com/sekiju/mdl/internal/config"
+	"github.com/sekiju/mdl/config"
+	"github.com/sekiju/mdl/extractor"
 	"github.com/sekiju/mdl/sdk/manga"
 	"net/url"
 	"os"
@@ -83,7 +84,7 @@ func (d *Downloader) run() {
 				return
 			}
 
-			ext, err := d.newExtractor(parsedURL.Hostname())
+			ext, err := extractor.NewExtractor(parsedURL.Hostname())
 			if err != nil {
 				log.Error().Err(err).Str("url", queueInfo.URL).Send()
 				return
@@ -141,7 +142,6 @@ func NewDownloader(opts *NewDownloaderOptions) *Downloader {
 	d := &Downloader{
 		ch:               make(chan *QueueInfo),
 		downloadPage:     downloadFunc,
-		newExtractor:     opts.NewExtractor,
 		batchSize:        opts.BatchSize,
 		cleanDestination: opts.CleanDestination,
 		downloadDir:      opts.Directory,

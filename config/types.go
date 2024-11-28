@@ -6,7 +6,7 @@ type arguments struct {
 	ListChapters bool
 }
 
-type Config struct {
+type config struct {
 	PrimaryCookie    *string
 	ListChaptersMode bool
 
