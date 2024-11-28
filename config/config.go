@@ -37,6 +37,7 @@ func init() {
 		log.Fatal().Err(err).Send()
 	}
 
+	Params.DownloadChapters = rootFlags.Args()
 	Params.PrimaryCookie = primaryCookie
 
 	k := koanf.NewWithConf(koanf.Conf{

@@ -3,6 +3,7 @@ package config
 type config struct {
 	PrimaryCookie    *string
 	ListChaptersMode bool
+	DownloadChapters []string
 
 	Application application     `koanf:"application"`
 	Output      output          `koanf:"output"`

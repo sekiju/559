@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/rs/zerolog"
@@ -45,8 +44,8 @@ func waitForInput() {
 }
 
 func getChapterURLs() []string {
-	if args := flag.Args(); len(args) > 0 {
-		return args
+	if len(config.Params.DownloadChapters) > 0 {
+		return config.Params.DownloadChapters
 	}
 
 	fmt.Print("Please enter the chapter URL: ")
@@ -61,6 +60,7 @@ func run() error {
 		}
 	}
 
+	fmt.Println(config.Params.DownloadChapters)
 	chapterURLs := getChapterURLs()
 
 	if config.Params.ListChaptersMode {
