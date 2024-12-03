@@ -2,24 +2,21 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sekiju/htt"
-	"github.com/sekiju/mdl/internal/config"
-	"github.com/sekiju/mdl/internal/download"
-	"github.com/sekiju/mdl/internal/extractor"
-	"github.com/sekiju/mdl/internal/sdk/extractor/manga"
+	"github.com/sekiju/mdl/config"
+	"github.com/sekiju/mdl/constant"
+	"github.com/sekiju/mdl/downloader"
+	"github.com/sekiju/mdl/extractor"
 	"github.com/sekiju/mdl/internal/util"
 	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -49,8 +46,8 @@ func waitForInput() {
 }
 
 func getChapterURLs() []string {
-	if args := flag.Args(); len(args) > 0 {
-		return args
+	if len(config.Params.DownloadChapters) > 0 {
+		return config.Params.DownloadChapters
 	}
 
 	fmt.Print("Please enter the chapter URL: ")
@@ -58,79 +55,69 @@ func getChapterURLs() []string {
 	return strings.Split(strings.TrimSpace(input), " ")
 }
 
-type DownloadFunc func(page *manga.Page) error
+func parse() string {
+	rootFlags := flag.NewFlagSet(constant.MDL, flag.ExitOnError)
+	primaryCookie := rootFlags.String("cookie", "", "Cookie string for the current session")
+	configPath := rootFlags.String("config", "config.hcl", "Path to the config file")
+
+	if len(os.Args) > 1 && os.Args[1] == "chapters" {
+		config.Params.ListChaptersMode = true
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+	}
+
+	if err := rootFlags.Parse(os.Args[1:]); err != nil {
+		log.Fatal().Err(err).Send()
+	}
+
+	config.Params.DownloadChapters = rootFlags.Args()
+	config.Params.PrimaryCookie = primaryCookie
+
+	return *configPath
+}
 
 func run() error {
-	cfg, err := config.New()
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
+	config.Load(parse())
+
+	if config.Params.Application.CheckUpdates {
+		if err := checkForUpdates(); err != nil {
+			return err
+		}
 	}
 
-	if cfg.Application.CheckForUpdates && checkForUpdates() != nil {
-		return err
-	}
+	fmt.Println(config.Params.DownloadChapters)
+	chapterURLs := getChapterURLs()
 
-	for _, chapterURL := range getChapterURLs() {
-		parsedURL, err := url.Parse(chapterURL)
-		if err != nil {
-			return fmt.Errorf("invalid chapter URL: %v", err)
-		}
+	if config.Params.ListChaptersMode {
+		for _, chapterURL := range chapterURLs {
+			parsedURL, err := url.Parse(chapterURL)
+			if err != nil {
+				return err
+			}
 
-		ext, err := extractor.NewExtractor(cfg, parsedURL.Hostname())
-		if err != nil {
-			return err
-		}
+			ext, err := extractor.NewExtractor(parsedURL.Hostname())
+			if err != nil {
+				return err
+			}
 
-		chapter, err := ext.FindChapter(chapterURL)
-		if err != nil {
-			return err
-		}
+			chapters, err := ext.FindChapters(chapterURL)
+			if err != nil {
+				return err
+			}
 
-		log.Info().Msg("Extracting pages...")
-
-		pages, err := ext.FindChapterPages(chapter)
-		if err != nil {
-			return err
-		}
-
-		if len(pages) == 0 {
-			return errors.New("no pages found to download")
-		}
-
-		outputDir := filepath.Join(cfg.Output.Dir, chapter.ID)
-
-		if cfg.Output.CleanDir {
-			if stat, err := os.Stat(outputDir); err == nil && stat.IsDir() {
-				if err = os.RemoveAll(outputDir); err != nil {
-					return err
-				}
+			for _, chapter := range chapters {
+				fmt.Println(chapter.ID, chapter.Title, chapter.URL)
 			}
 		}
+	} else {
+		// Default download mode
 
-		if err = os.MkdirAll(outputDir, os.ModePerm); err != nil {
-			return err
+		loader := downloader.NewDownloader()
+
+		for _, chapterURL := range chapterURLs {
+			loader.Queue(chapterURL)
 		}
 
-		log.Info().Msgf("Output: %s | Pages: %d", outputDir, len(pages))
-
-		start := time.Now()
-
-		var downloadFn DownloadFunc
-		if cfg.Output.Format == "auto" {
-			downloadFn = func(page *manga.Page) error {
-				return download.Bytes(outputDir, page)
-			}
-		} else {
-			downloadFn = func(page *manga.Page) error {
-				return download.WithEncode(outputDir, cfg.Output.Format, page)
-			}
-		}
-
-		if err = downloadPages(pages, cfg.Download.ConcurrentProcesses, downloadFn); err != nil {
-			return fmt.Errorf("downloading pages: %w", err)
-		}
-
-		log.Info().Msgf("Download completed in %s", time.Since(start))
+		loader.Stop()
 	}
 
 	return nil
@@ -164,34 +151,7 @@ func checkForUpdates() error {
 
 	sort.Sort(semver.Collection(versions))
 
-	log.Info().Msgf("New version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
+	log.Info().Msgf("New downloader version available: %s - download release from: https://github.com/sekiju/mdl/releases", versions[len(versions)-1].String())
 
-	return nil
-}
-
-func downloadPages(pages []*manga.Page, workers int, download DownloadFunc) error {
-	ch := make(chan *manga.Page, len(pages))
-	var wg sync.WaitGroup
-
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for page := range ch {
-				if err := download(page); err != nil {
-					log.Error().Err(err).Msgf("failed to download #%d page", page.Index)
-				}
-			}
-		}()
-	}
-
-	go func() {
-		for _, page := range pages {
-			ch <- page
-		}
-		close(ch)
-	}()
-
-	wg.Wait()
 	return nil
 }

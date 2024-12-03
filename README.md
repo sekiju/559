@@ -44,7 +44,7 @@ From this, the optimal number of threads is approximately **13**.
 #### Why not always use maximum threads?
 While increasing threads can improve download speeds, setting too high a number, like `50`, places unnecessary strain on your computer’s resources, including disk, processor, and memory usage. This extra load does not significantly improve performance and may degrade overall system efficiency. Therefore, it’s advisable to determine and use an optimal thread count for your setup.
 
-### Paid chapter download or how to obtain `cookie_string`?
+### Paid chapter download or how to obtain `cookie`?
 
 To extract cookies from websites, use tools like [Cookie-Editor](https://cookie-editor.com).
 
@@ -64,7 +64,7 @@ CLI argument or modify config file:
 
 site {
   "shonenjumpplus.com" {
-    cookie_string = "glsc=1hYa4GrNp2DndSNIShVyoDGP6MgDmaJhiX22C0X734hkzod56wsBN7Fy1S5ZBOQd"
+    cookie = "glsc=1hYa4GrNp2DndSNIShVyoDGP6MgDmaJhiX22C0X734hkzod56wsBN7Fy1S5ZBOQd"
   }
 }
 ```

@@ -1,71 +1,56 @@
 application {
-  check_for_updates = true
+  check_updates = true
+  max_parallel_downloads = 4
 }
 
 output {
-  dir       = "downloads"
-  clean_dir = false
-  format    = "auto" # auto | jpeg | png | avif | webp
-}
-
-download {
-  concurrent_processes = 4
+  directory      = "downloads"
+  clean_on_start = false
+  file_format    = "auto" # auto | jpeg | png | avif | webp
 }
 
 site {
-  "comic-walker.com" {}
-
   "shonenjumpplus.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
   "comic-zenon.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
   "pocket.shonenmagazine.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
   "comic-gardo.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
   "magcomi.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
-  "tonarinoyj.jp" {}
-
-  "comic-ogyaaa.com" {}
-
   "comic-action.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
   "comic-days.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
-  "comic-growl.com" {}
-
-  "comic-earthstar.com" {}
-
-  "comicborder.com" {}
-
-  "comic-trail.com" {}
-
   "kuragebunch.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
   "viewer.heros-web.com" {
-    cookie_string = ""
+    cookie = ""
   }
 
-  "www.sunday-webry.com" {}
-
   "www.cmoa.jp" {
-    cookie_string = ""
+    cookie = ""
+  }
+
+  "www.corocoro.jp" {
+    cookie = ""
   }
 }
