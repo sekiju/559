@@ -19,9 +19,17 @@ Date: YYYY-MM-DD
 
 -->
 
+## v1.1.1
+
+Date: 2024-12-16
+
+### Patch Changes
+
+- Cookie parameter from `config.hcl` was not loaded
+
 ## v1.1.0
 
-Date: YYYY-MM-DD
+Date: 2024-12-01
 
 ### What's Changed
 
