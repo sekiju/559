@@ -70,7 +70,9 @@ func parse() string {
 	}
 
 	config.Params.DownloadChapters = rootFlags.Args()
-	config.Params.PrimaryCookie = primaryCookie
+	if primaryCookie != nil && *primaryCookie != "" {
+		config.Params.PrimaryCookie = primaryCookie
+	}
 
 	return *configPath
 }
