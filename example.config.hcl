@@ -53,4 +53,8 @@ site {
   "www.corocoro.jp" {
     cookie = ""
   }
+
+  "ganma.jp" {
+    cookie = ""
+  }
 }

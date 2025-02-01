@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/sekiju/mdl/config"
+	"github.com/sekiju/mdl/extractor/bilibili"
 	"github.com/sekiju/mdl/extractor/cmoa"
 	"github.com/sekiju/mdl/extractor/comic_walker"
 	"github.com/sekiju/mdl/extractor/corocoro"
@@ -37,6 +38,7 @@ var domainRegistry = map[string]Factory{
 	"www.corocoro.jp":           fz(corocoro.New),
 	"storia.takeshobo.co.jp":    fz(storia_takeshobo.New),
 	"ganma.jp":                  fz(ganma.New),
+	"manga.bilibili.com":        fz(bilibili.New),
 }
 
 // fz is a generic helper function to create a Factory for manga.Extractor
